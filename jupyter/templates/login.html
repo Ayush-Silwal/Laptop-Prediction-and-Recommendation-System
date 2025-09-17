@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - LaptopAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/index-css.css') }}"
+    />
+    <style>
+      /* Login Page Specific Styles */
+      .login-container {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 2rem 4rem;
+      }
+
+      .login-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 450px;
+        text-align: center;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .login-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+        border-radius: 2px 2px 0 0;
+      }
+
+      .login-header {
+        margin-bottom: 2rem;
+      }
+
+      .login-header h1 {
+        font-size: 2.5rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .login-header p {
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .home-link {
+        position: absolute;
+        top: 1.5rem;
+        left: 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: var(--dark);
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .home-link:hover {
+        color: var(--accent-1);
+        transform: translateX(-5px);
+      }
+
+      .home-link i {
+        margin-right: 8px;
+      }
+
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .form-group {
+        position: relative;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-group label i {
+        color: var(--accent-1);
+        width: 20px;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--accent-1);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+      }
+
+      .form-group i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+      }
+
+      .login-btn {
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+      }
+
+      .login-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .signup-text {
+        margin-top: 1.5rem;
+        color: #666;
+        font-size: 0.95rem;
+      }
+
+      .signup-text a {
+        color: var(--accent-1);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .signup-text a:hover {
+        color: var(--accent-2);
+        text-decoration: underline;
+      }
+
+      .error {
+        color: var(--error-color);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        display: block;
+        text-align: left;
+      }
+
+      input.error-border {
+        border-color: var(--error-color);
+      }
+
+      input.success-border {
+        border-color: var(--success-color);
+      }
+
+      /* Responsive styles for login page */
+      @media (max-width: 768px) {
+        .login-card {
+          padding: 2rem;
+          margin: 1rem;
+        }
+
+        .login-header h1 {
+          font-size: 2rem;
+        }
+
+        .home-link {
+          top: 1rem;
+          left: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .login-card {
+          padding: 1.5rem;
+        }
+
+        .login-header h1 {
+          font-size: 1.8rem;
+        }
+
+        .form-group input {
+          padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+        }
+
+        .form-group i.input-icon {
+          left: 0.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+
+    <!-- Header -->
+    <header id="header">
+      <div class="header-container">
+        <div class="logo">
+          <i class="fas fa-laptop-code"></i>
+          Laptop P & R System
+        </div>
+        <nav>
+          <ul id="nav-menu">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li>
+              <a href="{{ url_for('index') }}#prediction-form">Predict</a>
+            </li>
+            <li><a href="{{ url_for('index') }}#about">About</a></li>
+          </ul>
+        </nav>
+        <div class="auth-buttons">
+          <a href="{{ url_for('login') }}" class="auth-btn login-btn">Login</a>
+          <a href="{{ url_for('signup') }}" class="auth-btn signup-btn"
+            >Sign Up</a
+          >
+        </div>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Login Content -->
+    <main id="main-content" class="login-container">
+      <div class="login-card">
+        <a href="{{ url_for('index') }}" class="home-link">
+          <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="login-header">
+          <h1>Welcome Back</h1>
+          <p>Sign in to your account</p>
+        </div>
+
+        <form
+          name="loginForm"
+          action="{{ url_for('login') }}"
+          method="POST"
+          class="login-form"
+        >
+          <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Enter your username"
+              class="{% if errors and errors.username %}error-border{% endif %}"
+            />
+            <i class="fas fa-user input-icon"></i>
+            {% if errors and errors.username %}
+            <span class="error">{{ errors.username }}</span>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              class="{% if errors and errors.password %}error-border{% endif %}"
+            />
+            <i class="fas fa-lock input-icon"></i>
+            {% if errors and errors.password %}
+            <span class="error">{{ errors.password }}</span>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="login-btn">Sign In</button>
+
+          {% if errors and errors.general %}
+          <div class="error" style="text-align: center; margin-top: 1rem">
+            {{ errors.general }}
+          </div>
+          {% endif %}
+        </form>
+
+        <p class="signup-text">
+          Don't have an account?
+          <a href="{{ url_for('signup') }}">Create one here</a>
+        </p>
+      </div>
+    </main>
+
+    <script>
+      function validateLoginForm() {
+        let username = document.getElementById("username").value.trim();
+        let password = document.getElementById("password").value.trim();
+        let isValid = true;
+
+        // Reset previous error states
+        document
+          .getElementById("username")
+          .classList.remove("error-border", "success-border");
+        document
+          .getElementById("password")
+          .classList.remove("error-border", "success-border");
+
+        const usernameError = document.querySelector("#username + .error");
+        const passwordError = document.querySelector("#password + .error");
+
+        if (usernameError) usernameError.textContent = "";
+        if (passwordError) passwordError.textContent = "";
+
+        // Validate username
+        if (username === "") {
+          if (usernameError) usernameError.textContent = "Username is required";
+          document.getElementById("username").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("username").classList.add("success-border");
+        }
+
+        // Validate password
+        if (password === "") {
+          if (passwordError) passwordError.textContent = "Password is required";
+          document.getElementById("password").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("password").classList.add("success-border");
+        }
+
+        return isValid;
+      }
+
+      // Add form validation on submit
+      document.querySelector("form").addEventListener("submit", function (e) {
+        if (!validateLoginForm()) {
+          e.preventDefault();
+        }
+      });
+
+      // Add real-time validation
+      document
+        .getElementById("username")
+        .addEventListener("blur", validateLoginForm);
+      document
+        .getElementById("password")
+        .addEventListener("blur", validateLoginForm);
+    </script>
+  </body>
+</html>

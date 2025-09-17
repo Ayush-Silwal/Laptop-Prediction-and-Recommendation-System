@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login - LaptopAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/index-css.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin-css.css') }}"
+    />
+    <style>
+      /* Admin Login Page Specific Styles */
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+
+    <!-- Header -->
+    <header id="header">
+      <div class="header-container">
+        <a href="{{ url_for('index') }}" class="logo">
+          <i class="fas fa-laptop-code"></i>
+          LaptopAI
+        </a>
+        <nav>
+          <ul id="nav-menu">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li>
+              <a href="{{ url_for('index') }}#prediction-form">Predict</a>
+            </li>
+            <li><a href="{{ url_for('index') }}#about">About</a></li>
+          </ul>
+        </nav>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Admin Login Content -->
+    <main id="main-content" class="admin-login-container">
+      <div class="admin-login-card">
+        <a href="{{ url_for('index') }}" class="home-link">
+          <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="admin-login-header">
+          <h1>Admin Login</h1>
+          <p>Sign in to access the admin dashboard</p>
+        </div>
+
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <ul>
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% endwith %}
+        </div>
+
+        <form
+          name="adminLoginForm"
+          action="{{ url_for('admin_login') }}"
+          method="POST"
+          class="admin-login-form"
+        >
+          <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Enter your username"
+              class="{% if errors and errors.username %}error-border{% endif %}"
+            />
+            <i class="fas fa-user input-icon"></i>
+            {% if errors and errors.username %}
+            <span class="error">{{ errors.username }}</span>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              class="{% if errors and errors.password %}error-border{% endif %}"
+            />
+            <i class="fas fa-lock input-icon"></i>
+            {% if errors and errors.password %}
+            <span class="error">{{ errors.password }}</span>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="login-btn">Sign In</button>
+
+          {% if errors and errors.general %}
+          <div class="error" style="text-align: center; margin-top: 1rem">
+            {{ errors.general }}
+          </div>
+          {% endif %}
+        </form>
+
+        <p class="home-text">
+          Want to go back? <a href="{{ url_for('index') }}">Home Page</a>
+        </p>
+      </div>
+    </main>
+
+    <script>
+      function validateAdminLoginForm() {
+        let username = document.getElementById("username").value.trim();
+        let password = document.getElementById("password").value.trim();
+        let isValid = true;
+
+        // Reset previous error states
+        document
+          .getElementById("username")
+          .classList.remove("error-border", "success-border");
+        document
+          .getElementById("password")
+          .classList.remove("error-border", "success-border");
+
+        const usernameError = document.querySelector("#username + .error");
+        const passwordError = document.querySelector("#password + .error");
+
+        if (usernameError) usernameError.textContent = "";
+        if (passwordError) passwordError.textContent = "";
+
+        // Validate username
+        if (username === "") {
+          if (usernameError) usernameError.textContent = "Username is required";
+          document.getElementById("username").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("username").classList.add("success-border");
+        }
+
+        // Validate password
+        if (password === "") {
+          if (passwordError) passwordError.textContent = "Password is required";
+          document.getElementById("password").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("password").classList.add("success-border");
+        }
+
+        return isValid;
+      }
+
+      // Add form validation on submit
+      document.querySelector("form").addEventListener("submit", function (e) {
+        if (!validateAdminLoginForm()) {
+          e.preventDefault();
+        }
+      });
+
+      // Add real-time validation
+      document
+        .getElementById("username")
+        .addEventListener("blur", validateAdminLoginForm);
+      document
+        .getElementById("password")
+        .addEventListener("blur", validateAdminLoginForm);
+    </script>
+  </body>
+</html>

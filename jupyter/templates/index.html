@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laptop Price Prediction & Recommendation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-css.css') }}" />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+
+    <!-- Flash Messages -->
+    <div class="flash-messages">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">
+        {{ message }}
+        <span class="flash-close" onclick="this.parentElement.style.opacity='0';setTimeout(() => this.parentElement.remove(), 300)">&times;</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- Header -->
+    <header id="header">
+      <div class="header-container">
+        <div class="logo">
+          <i class="fas fa-laptop-code"></i>
+          Laptop P & R System
+        </div>
+        <nav>
+          <ul id="nav-menu">
+            <li><a href="/" class="active">Home</a></li>
+            <li><a href="#prediction-form">Predict</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </nav>
+        <div class="auth-buttons">
+          <div class="dropdown">
+            <a href="/login" class="auth-btn login-btn">Login</a>
+            <div class="dropdown-content">
+              <a href="/login">User Login</a>
+              <a href="/admin_login">Admin Login</a>
+            </div>
+          </div>
+          <a href="/signup" class="auth-btn signup-btn">Sign Up</a>
+        </div>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="main-content">
+      <div class="hero-content">
+        <h1>
+          Laptop Price
+          <span class="typewriter" id="typewriter">Prediction</span>
+        </h1>
+        <p>
+          Predict fair prices and discover the right laptop tailored to your
+          needs using Machine Learning.
+        </p>
+        <div class="cta-buttons">
+          <a href="#prediction-form" class="cta-button">Predict Now</a>
+          <a href="#about" class="cta-button secondary">Learn More</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img
+          src="https://images.unsplash.com/photo-1587614382346-4ec70e388b28?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80"
+          alt="Laptop with AI visualization"
+        />
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+      <div class="section-title">
+        <h2>About Our System</h2>
+        <p>
+          How our machine learning system helps you make better laptop
+          purchasing decisions
+        </p>
+      </div>
+      <div class="about-content">
+        <div class="about-text">
+          <h3>Solving the Laptop Buying Dilemma</h3>
+          <p>
+            Buying a laptop can be confusing with countless options and
+            fluctuating prices. Our system eliminates the guesswork by providing
+            accurate price predictions and personalized recommendations based on
+            your specific needs.
+          </p>
+          <p>
+            Powered by advanced machine learning algorithms, we analyze market
+            trends and technical specifications to ensure you get the best value
+            for your money.
+          </p>
+          <div class="tech-list">
+            <span class="tech-item">Decision Trees</span>
+            <span class="tech-item">Random Forest</span>
+            <span class="tech-item">K-Nearest Neighbors</span>
+            <span class="tech-item">K-Means Clustering</span>
+          </div>
+        </div>
+        <div class="about-image">
+          <img
+            src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80"
+            alt="AI and data visualization"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="section-title">
+        <h2>Key Features</h2>
+        <p>Discover what makes our system unique and powerful</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Price Prediction</h3>
+          <p>
+            Get accurate market value estimates for any laptop configuration
+            based on current market trends.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <h3>Smart Recommendations</h3>
+          <p>
+            Receive personalized laptop suggestions tailored to your budget,
+            usage needs, and preferences.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-balance-scale"></i>
+          </div>
+          <h3>Model Comparison</h3>
+          <p>
+            Compare different laptop models side by side to make informed
+            purchasing decisions.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-database"></i>
+          </div>
+          <h3>Data-Driven Insights</h3>
+          <p>
+            Our ML models continuously learn from market data to provide the
+            most accurate predictions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo Preview -->
+    <section class="demo-preview" id="prediction-form">
+      <div class="section-title">
+        <h2>Laptop Price Prediction</h2>
+        <p>
+          Enter your laptop specifications to get an accurate price prediction
+        </p>
+      </div>
+
+      {% if predicted_price %}
+      <div id="prediction-result" class="prediction-result animate">
+        <h2><i class="fas fa-check-circle"></i> Prediction Result</h2>
+        <div class="predicted-price">₹{{ predicted_price }}</div>
+        
+        {% if cluster_name %}
+        <div class="cluster-info">
+          <h3><i class="fas fa-layer-group"></i> This laptop belongs to: {{ cluster_name }}</h3>
+          <p>Similar laptops in this category:</p>
+          <div class="cluster-examples">
+            {% for example in cluster_examples %}
+            <div class="example-laptop animate">
+              <strong>{{ example.Title | default(example.Company ~ ' ' ~ example.TypeName) }}</strong>
+              <p><i class="fas fa-memory"></i> RAM: {{ example.Ram | default('N/A') }}</p>
+              <p><i class="fas fa-hdd"></i> Storage: {{ example.Storage | default('N/A') }}</p>
+              <p><i class="fas fa-microchip"></i> CPU: {{ example.Cpu_brand | default('N/A') }}</p>
+              <p><i class="fas fa-microchip"></i> GPU: {{ example.Gpu_brand | default('N/A') }}</p>
+              <p><i class="fas fa-weight"></i> Weight: {{ example.Weight | default('N/A') }}</p>
+              <p><i class="fas fa-rupee-sign"></i> Price: ₹{{ example.Price | default('N/A') }}</p>
+              <p><i class="fas fa-star"></i> Features: {{ example.Features | default('N/A') }}</p>
+              <p><i class="fas fa-touchpad"></i> Touchscreen: {{ example.Touchscreen | default('N/A') }}</p>
+              <p><i class="fas fa-desktop"></i> IPS: {{ example.Ips | default('N/A') }}</p>
+              <p><i class="fas fa-window-restore"></i> OS: {{ example.os | default('N/A') }}</p>
+            </div>
+            {% else %}
+            <p>No similar laptops found in this category.</p>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        
+        {% if recommendations %}
+        <div class="recommendations">
+          <h3><i class="fas fa-thumbs-up"></i> Recommended Similar Laptops:</h3>
+          <div class="recommendation-list">
+            {% for rec in recommendations %}
+            <div class="recommended-laptop animate">
+              <strong>{{ rec.Title | default(rec.Company ~ ' ' ~ rec.TypeName) }}</strong>
+              <p><i class="fas fa-memory"></i> RAM: {{ rec.Ram | default('N/A') }}</p>
+              <p><i class="fas fa-hdd"></i> Storage: {{ rec.Storage | default('N/A') }}</p>
+              <p><i class="fas fa-microchip"></i> CPU: {{ rec.Cpu_brand | default('N/A') }}</p>
+              <p><i class="fas fa-microchip"></i> GPU: {{ rec.Gpu_brand | default('N/A') }}</p>
+              <p><i class="fas fa-weight"></i> Weight: {{ rec.Weight | default('N/A') }}</p>
+              <p><i class="fas fa-rupee-sign"></i> Price: ₹{{ rec.Price | default('N/A') }}</p>
+              <p><i class="fas fa-star"></i> Features: {{ rec.Features | default('N/A') }}</p>
+              <p><i class="fas fa-percentage"></i> Similarity: {{ rec.Similarity | default('N/A') }}</p>
+              <p><i class="fas fa-touchpad"></i> Touchscreen: {{ rec.Touchscreen | default('N/A') }}</p>
+              <p><i class="fas fa-desktop"></i> IPS: {{ rec.Ips | default('N/A') }}</p>
+              <p><i class="fas fa-window-restore"></i> OS: {{ rec.os | default('N/A') }}</p>
+              <button class="save-recommendation-btn" 
+                      data-laptop-name="{{ rec.Title | default(rec.Company ~ ' ' ~ rec.TypeName) }}"
+                      data-specs="RAM: {{ rec.Ram | default('N/A') }}, Storage: {{ rec.Storage | default('N/A') }}, CPU: {{ rec.Cpu_brand | default('N/A') }}"
+                      data-price="{{ rec.Price | default('N/A') }}"
+                      data-similarity="{{ rec.Similarity | default('0') }}"
+                      onclick="saveRecommendation(this)"
+                      aria-label="Save recommendation for {{ rec.Title | default(rec.Company ~ ' ' ~ rec.TypeName) }}">
+                Save Recommendation
+              </button>
+            </div>
+            {% else %}
+            <p>No recommended laptops found.</p>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="demo-container">
+        <div class="prediction-card">
+          <h3 class="demo-card-title">Price Prediction</h3>
+          <form method="POST" action="/predict" id="prediction-form">
+            <div class="spec-form">
+              <div class="form-group">
+                <label for="company"><i class="fas fa-tag"></i> Brand</label>
+                <select name="company" id="company" required>
+                  {% for company in companies %}
+                  <option value="{{ company }}" {% if form_data and form_data.company == company %}selected{% endif %}>{{ company }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="type"><i class="fas fa-laptop"></i> Type</label>
+                <select name="type" id="type" required>
+                  {% for type in types %}
+                  <option value="{{ type }}" {% if form_data and form_data.type == type %}selected{% endif %}>{{ type }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ram"><i class="fas fa-memory"></i> RAM (GB)</label>
+                <select name="ram" id="ram" required>
+                  {% for ram in [4, 8, 16, 32, 64] %}
+                  <option value="{{ ram }}" {% if form_data and form_data.ram == ram|string %}selected{% endif %}>{{ ram }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
+                <input
+                  type="number"
+                  name="weight"
+                  id="weight"
+                  step="0.01"
+                  value="{% if form_data %}{{ form_data.weight }}{% else %}2.0{% endif %}"
+                  min="1"
+                  max="4"
+                  required
+                />
+                <span id="weightError" class="error"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="touchscreen"><i class="fas fa-touchpad"></i> Touchscreen</label>
+                <select name="touchscreen" id="touchscreen" required>
+                  <option value="No" {% if not form_data or form_data.touchscreen == 'No' %}selected{% endif %}>No</option>
+                  <option value="Yes" {% if form_data and form_data.touchscreen == 'Yes' %}selected{% endif %}>Yes</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ips"><i class="fas fa-desktop"></i> IPS Display</label>
+                <select name="ips" id="ips" required>
+                  <option value="No" {% if not form_data or form_data.ips == 'No' %}selected{% endif %}>No</option>
+                  <option value="Yes" {% if form_data and form_data.ips == 'Yes' %}selected{% endif %}>Yes</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="screen_size"><i class="fas fa-expand"></i> Screen Size (Inches)</label>
+                <input
+                  type="number"
+                  name="screen_size"
+                  id="screen_size"
+                  step="0.1"
+                  value="{% if form_data %}{{ form_data.screen_size }}{% else %}15.6{% endif %}"
+                  min="10"
+                  max="17"
+                  required
+                />
+                <span id="screenSizeError" class="error"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="resolution"><i class="fas fa-desktop"></i> Resolution</label>
+                <select name="resolution" id="resolution" required>
+                  <option value="1920x1080" {% if not form_data or form_data.resolution == '1920x1080' %}selected{% endif %}>1920x1080</option>
+                  <option value="1366x768" {% if form_data and form_data.resulation == '1366x768' %}selected{% endif %}>1366x768</option>
+                  <option value="1600x900" {% if form_data and form_data.resolution == '1600x900' %}selected{% endif %}>1600x900</option>
+                  <option value="3840x2160" {% if form_data and form_data.resolution == '3840x2160' %}selected{% endif %}>3840x2160</option>
+                  <option value="3200x1800" {% if form_data and form_data.resolution == '3200x1800' %}selected{% endif %}>3200x1800</option>
+                  <option value="2880x1800" {% if form_data and form_data.resolution == '2880x1800' %}selected{% endif %}>2880x1800</option>
+                  <option value="2560x1600" {% if form_data and form_data.resolution == '2560x1600' %}selected{% endif %}>2560x1600</option>
+                  <option value="2560x1440" {% if form_data and form_data.resolution == '2560x1440' %}selected{% endif %}>2560x1440</option>
+                  <option value="2304x1440" {% if form_data and form_data.resolution == '2304x1440' %}selected{% endif %}>2304x1440</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="cpu"><i class="fas fa-microchip"></i> CPU Brand</label>
+                <select name="cpu" id="cpu" required>
+                  {% for cpu in cpus %}
+                  <option value="{{ cpu }}" {% if form_data and form_data.cpu == cpu %}selected{% endif %}>{{ cpu }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="HDD"><i class="fas fa-hdd"></i> HDD (GB)</label>
+                <select name="HDD" id="HDD" required>
+                  <option value="0" {% if not form_data or form_data.HDD == '0' %}selected{% endif %}>0</option>
+                  <option value="128" {% if form_data and form_data.HDD == '128' %}selected{% endif %}>128</option>
+                  <option value="256" {% if form_data and form_data.HDD == '256' %}selected{% endif %}>256</option>
+                  <option value="512" {% if form_data and form_data.HDD == '512' %}selected{% endif %}>512</option>
+                  <option value="1024" {% if form_data and form_data.HDD == '1024' %}selected{% endif %}>1024</option>
+                  <option value="2048" {% if form_data and form_data.HDD == '2048' %}selected{% endif %}>2048</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="SSD"><i class="fas fa-hdd"></i> SSD (GB)</label>
+                <select name="SSD" id="SSD" required>
+                  <option value="0" {% if not form_data or form_data.SSD == '0' %}selected{% endif %}>0</option>
+                  <option value="128" {% if form_data and form_data.SSD == '128' %}selected{% endif %}>128</option>
+                  <option value="256" {% if not form_data or form_data.SSD == '256' %}selected{% endif %}>256</option>
+                  <option value="512" {% if form_data and form_data.SSD == '512' %}selected{% endif %}>512</option>
+                  <option value="1024" {% if form_data and form_data.SSD == '1024' %}selected{% endif %}>1024</option>
+                </select>
+                <span id="storageError" class="error"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="gpu"><i class="fas fa-microchip"></i> GPU Brand</label>
+                <select name="gpu" id="gpu" required>
+                  {% for gpu in gpus %}
+                  <option value="{{ gpu }}" {% if form_data and form_data.gpu == gpu %}selected{% endif %}>{{ gpu }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="os"><i class="fas fa-window-restore"></i> OS Type</label>
+                <select name="os" id="os" required>
+                  {% for os in oss %}
+                  <option value="{{ os }}" {% if form_data and form_data.os == os %}selected{% endif %}>{{ os }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <button type="submit" id="predict-btn" class="predict-btn">
+                Predict Price
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>
+          Our simple process to get accurate laptop predictions and
+          recommendations
+        </p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-icon">
+            <i class="fas fa-sliders-h"></i>
+          </div>
+          <h3>Enter Specifications</h3>
+          <p>Provide laptop specs or your usage requirements</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-icon">
+            <i class="fas fa-calculator"></i>
+          </div>
+          <h3>ML Model Predicts</h3>
+          <p>Our algorithms analyze and predict the fair price</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-icon">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <h3>Get Results</h3>
+          <p>Receive accurate price predictions instantly</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-container">
+        <div class="footer-col">
+          <h3>LaptopAI</h3>
+          <p>
+            Smart laptop price prediction and recommendation system powered by
+            machine learning.
+          </p>
+          <div class="social-links">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#"><i class="fab fa-github"></i></a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h3>Quick Links</h3>
+          <ul class="footer-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="#prediction-form">Predict</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Resources</h3>
+          <ul class="footer-links">
+            <li><a href="#about">About</a></li>
+            <li><a href="#prediction-form">How It Works</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Contact</h3>
+          <p>Have questions? Get in touch with our support team.</p>
+          <a href="#" class="contact-button">Contact Us</a>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>
+          &copy; 2025 Laptop P&R System. All rights reserved. This is a college project
+          showcase by Ayush Silwal.
+        </p>
+      </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+  </body>
+</html>

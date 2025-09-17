@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Dashboard - Laptop Price Predictor</title>
+
+    <!-- SB Admin 2 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom CSS -->
+    <style>
+      .card-counter {
+        box-shadow: 2px 2px 10px #dadada;
+        margin: 5px;
+        padding: 20px 10px;
+        border-radius: 5px;
+        height: 100px;
+      }
+      .card-counter.primary {
+        background-color: #007bff;
+        color: #fff;
+      }
+      .card-counter.danger {
+        background-color: #ef5350;
+        color: #fff;
+      }
+      .card-counter.success {
+        background-color: #66bb6a;
+        color: #fff;
+      }
+      .card-counter.info {
+        background-color: #26c6da;
+        color: #fff;
+      }
+      .card-counter i {
+        font-size: 5em;
+        opacity: 0.3;
+      }
+      .card-counter .count-numbers {
+        position: absolute;
+        right: 35px;
+        top: 20px;
+        font-size: 32px;
+      }
+      .card-counter .count-name {
+        position: absolute;
+        right: 35px;
+        top: 65px;
+        font-style: italic;
+        text-transform: capitalize;
+        opacity: 0.8;
+        display: block;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar - Brand -->
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="{{ url_for('index') }}"
+        >
+          <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor</div>
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0" />
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span></a
+          >
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider" />
+
+        <!-- Heading -->
+        <div class="sidebar-heading">User Features</div>
+
+        <!-- Nav Item - Predictions -->
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('prediction_history') }}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>Prediction History</span></a
+          >
+        </li>
+
+        <!-- Nav Item - Recommendations -->
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="fas fa-fw fa-table"></i>
+            <span>Recommendation History</span></a
+          >
+        </li>
+
+        <!-- Nav Item - Bookings -->
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>Booking History</span></a
+          >
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider d-none d-md-block" />
+
+        <!-- Sidebar Toggler (Sidebar) -->
+        <div class="text-center d-none d-md-inline">
+          <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+      </ul>
+      <!-- End of Sidebar -->
+
+      <!-- Content Wrapper -->
+      <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+          <!-- Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <!-- Sidebar Toggle (Topbar) -->
+            <button
+              id="sidebarToggleTop"
+              class="btn btn-link d-md-none rounded-circle mr-3"
+            >
+              <i class="fa fa-bars"></i>
+            </button>
+
+            <!-- Topbar Navbar -->
+            <ul class="navbar-nav ml-auto">
+              <!-- Nav Item - User Information -->
+              <li class="nav-item dropdown no-arrow">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small"
+                    >User</span
+                  >
+                  <img
+                    class="img-profile rounded-circle"
+                    src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
+                  />
+                </a>
+                <!-- Dropdown - User Information -->
+                <div
+                  class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown"
+                >
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Settings
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i
+                      class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
+                    ></i>
+                    Logout
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </nav>
+          <!-- End of Topbar -->
+
+          <!-- Begin Page Content -->
+          <div class="container-fluid">
+            <!-- Page Heading -->
+            <div
+              class="d-sm-flex align-items-center justify-content-between mb-4"
+            >
+              <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+              <a
+                href="{{ url_for('index') }}"
+                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+              >
+                <i class="fas fa-plus fa-sm text-white-50"></i> New Prediction
+              </a>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+              <!-- Total Predictions Card -->
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                        >
+                          Total Predictions
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ user_stats.total_predictions }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Average Price Card -->
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                        >
+                          Average Predicted Price
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          ${{ user_stats.average_price }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recommendations Card -->
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                        >
+                          Saved Recommendations
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ user_stats.saved_recommendations }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i
+                          class="fas fa-clipboard-list fa-2x text-gray-300"
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bookings Card -->
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+                        >
+                          Total Bookings
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ user_stats.total_bookings }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+              <!-- Recent Predictions -->
+              <div class="col-xl-8 col-lg-7">
+                <div class="card shadow mb-4">
+                  <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+                  >
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      Recent Predictions
+                    </h6>
+                    <a
+                      href="{{ url_for('prediction_history') }}"
+                      class="btn btn-sm btn-primary"
+                      >View All</a
+                    >
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table
+                        class="table table-bordered"
+                        width="100%"
+                        cellspacing="0"
+                      >
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Laptop Specs</th>
+                            <th>Predicted Price</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>2023-10-15</td>
+                            <td>Dell, Intel i7, 16GB RAM, 512GB SSD</td>
+                            <td>$1,299.99</td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                              <a href="#" class="btn btn-sm btn-danger"
+                                >Delete</a
+                              >
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>2023-10-12</td>
+                            <td>HP, AMD Ryzen 5, 8GB RAM, 256GB SSD</td>
+                            <td>$899.99</td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                              <a href="#" class="btn btn-sm btn-danger"
+                                >Delete</a
+                              >
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>2023-10-10</td>
+                            <td>Apple, M1 Chip, 8GB RAM, 256GB SSD</td>
+                            <td>$1,199.99</td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                              <a href="#" class="btn btn-sm btn-danger"
+                                >Delete</a
+                              >
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Recommendations -->
+              <div class="col-xl-4 col-lg-5">
+                <div class="card shadow mb-4">
+                  <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+                  >
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      Recent Recommendations
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div
+                                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                              >
+                                Dell XPS 13
+                              </div>
+                              <div
+                                class="h5 mb-0 font-weight-bold text-gray-800"
+                              >
+                                $1,299.99
+                              </div>
+                              <div class="mt-2 text-muted">
+                                Saved: 2023-10-15
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i class="fas fa-laptop fa-2x text-gray-300"></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                          <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                              <div
+                                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                              >
+                                HP Spectre x360
+                              </div>
+                              <div
+                                class="h5 mb-0 font-weight-bold text-gray-800"
+                              >
+                                $1,199.99
+                              </div>
+                              <div class="mt-2 text-muted">
+                                Saved: 2023-10-12
+                              </div>
+                            </div>
+                            <div class="col-auto">
+                              <i class="fas fa-laptop fa-2x text-gray-300"></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+              <!-- Booking History -->
+              <div class="col-12">
+                <div class="card shadow mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      Booking History
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table
+                        class="table table-bordered"
+                        width="100%"
+                        cellspacing="0"
+                      >
+                        <thead>
+                          <tr>
+                            <th>Booking ID</th>
+                            <th>Product</th>
+                            <th>Date</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>#B001</td>
+                            <td>Dell XPS 13</td>
+                            <td>2023-10-15</td>
+                            <td>$1,299.99</td>
+                            <td>
+                              <span class="badge badge-success">Delivered</span>
+                            </td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>#B002</td>
+                            <td>HP Spectre x360</td>
+                            <td>2023-09-28</td>
+                            <td>$1,199.99</td>
+                            <td>
+                              <span class="badge badge-warning"
+                                >Processing</span
+                              >
+                            </td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>#B003</td>
+                            <td>MacBook Air</td>
+                            <td>2023-09-15</td>
+                            <td>$999.99</td>
+                            <td>
+                              <span class="badge badge-success">Delivered</span>
+                            </td>
+                            <td>
+                              <a href="#" class="btn btn-sm btn-info">View</a>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span
+                >Copyright &copy; Laptop Price Predictor 2025-Ayush Silwal</span
+              >
+            </div>
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+      <!-- End of Content Wrapper -->
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SB Admin 2 JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+  </body>
+</html>

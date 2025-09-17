@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit User</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
+    <style>
+        .form-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        .form-container label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .form-container input[type="text"],
+        .form-container input[type="email"],
+        .form-container input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+
+        /* Error message styling */
+        .form-container .error {
+            color: #856404;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header class="top">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/admin logo.jpg') }}" alt="Laptop Price Predictor Logo">
+        </div>
+        <h1>Edit User</h1>
+    </header>
+    <div class="container">
+        <div class="content">
+            <div class="form-container">
+                <h2>Edit User</h2>
+                
+                
+                {% if errors.conflict %}
+                    <div class="error">{{ errors.conflict }}</div>
+                {% endif %}
+
+                <form method="POST" id="editUserForm">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" value="{{ user[1] }}">
+                    <div class="error" id="usernameError"></div>
+
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" value="{{ user[2] }}">
+                    <div class="error" id="emailError"></div>
+
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password">
+                    <div class="error" id="passwordError"></div>
+
+                    <button type="submit">Update User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('editUserForm').addEventListener('submit', function(event) {
+    let isValid = true;
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    // Validate username
+    if (username.trim() === "") {
+        document.getElementById('usernameError').innerText = 'Username is required.';
+        isValid = false;
+    } else if (username.length < 8) {
+        document.getElementById('usernameError').innerText = 'Username must be at least 8 characters long.';
+        isValid = false;
+    } else {
+        document.getElementById('usernameError').innerText = '';
+    }
+
+    // Validate email
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email.trim() === "") {
+        document.getElementById('emailError').innerText = 'Email is required.';
+        isValid = false;
+    } else if (!emailPattern.test(email)) {
+        document.getElementById('emailError').innerText = 'Please enter a valid email address.';
+        isValid = false;
+    } else {
+        document.getElementById('emailError').innerText = '';
+    }
+
+    // Validate password
+    if (password.length < 5 || password.length > 10) {
+        document.getElementById('passwordError').innerText = 'Password must be between 5 and 10 characters long.';
+        isValid = false;
+    } else {
+        document.getElementById('passwordError').innerText = '';
+    }
+
+    if (!isValid) {
+        event.preventDefault();
+    }
+});
+
+    </script>
+</body>
+</html>

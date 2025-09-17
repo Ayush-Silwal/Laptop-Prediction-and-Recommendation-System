@@ -1,0 +1,632 @@
+from flask import Flask, flash, redirect, render_template, request, url_for, session
+import joblib
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from customModel import RandomForest, DecisionTree, KNNRecommender
+from werkzeug.security import generate_password_hash, check_password_hash
+from db_connection import create_connection, close_connection
+import re
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+# Load model with proper class definitions
+MODEL_PATH = Path("laptop_models.pkl")
+
+try:
+    saved_models = joblib.load(MODEL_PATH)
+    model = saved_models['model']
+    preprocessor = saved_models['preprocessor']
+    df = saved_models['df']
+    print("✅ Model loaded successfully!")
+except Exception as e:
+    print(f"❌ Failed to load model: {e}")
+    model = None
+    preprocessor = None
+    df = pd.DataFrame()
+
+def get_price_based_recommendations(predicted_price, n_recommendations=5, price_range=0.2):
+    """Get laptop recommendations within price range (±20% by default)"""
+    try:
+        lower_bound = predicted_price * (1 - price_range)
+        upper_bound = predicted_price * (1 + price_range)
+        
+        # Filter laptops within price range
+        price_filtered = df[
+            (df['Price'] >= lower_bound) & 
+            (df['Price'] <= upper_bound)
+        ].copy()
+        
+        if len(price_filtered) < n_recommendations:
+            # If not enough results, expand range
+            price_filtered = df[
+                (df['Price'] >= predicted_price * 0.8) & 
+                (df['Price'] <= predicted_price * 1.5)
+            ].copy()
+        
+        if len(price_filtered) == 0:
+            # If still no results, get closest priced laptops
+            df['price_diff'] = abs(df['Price'] - predicted_price)
+            price_filtered = df.sort_values('price_diff').head(n_recommendations)
+        else:
+            price_filtered['price_diff'] = abs(price_filtered['Price'] - predicted_price)
+        
+        recommendations = price_filtered.sort_values('price_diff').head(n_recommendations)
+        return recommendations.to_dict('records'), None
+    
+    except Exception as e:
+        return None, f"Recommendation error: {str(e)}"
+
+def predict_price(form_data):
+    try:
+        company = form_data.get('company')
+        type_ = form_data.get('type')
+        ram = int(form_data.get('ram'))
+        weight = float(form_data.get('weight'))
+        touchscreen = 1 if form_data.get('touchscreen') == 'Yes' else 0
+        ips = 1 if form_data.get('ips') == 'Yes' else 0
+        screen_size = float(form_data.get('screen_size'))
+        resolution = form_data.get('resolution')
+        cpu = form_data.get('cpu')
+        hdd = int(form_data.get('HDD'))
+        ssd = int(form_data.get('SSD'))
+        gpu = form_data.get('gpu')
+        os_ = form_data.get('os')
+
+        X_res, Y_res = map(int, resolution.lower().split('x'))
+        ppi = ((X_res**2 + Y_res**2) ** 0.5) / screen_size
+
+        input_dict = {
+            "Company": company,
+            "TypeName": type_,
+            "Ram": ram,
+            "Weight": weight,
+            "Touchscreen": touchscreen,
+            "Ips": ips,
+            "PPI": ppi,
+            "Cpu": cpu,
+            "Hdd": hdd,
+            "Ssd": ssd,
+            "Gpu": gpu,
+            "OpSys": os_
+        }
+
+        input_df = pd.DataFrame([input_dict])
+
+        if preprocessor and model:
+            transformed = preprocessor.transform(input_df)
+            prediction = model.predict(transformed)[0]
+            return np.round(prediction, 2), None
+        else:
+            return None, "Model or preprocessor not loaded."
+  
+        
+        # Get price-based recommendations
+        recommendations, rec_error = get_price_based_recommendations(predicted_price)
+        if rec_error:
+            print(f"Recommendation warning: {rec_error}")
+        
+        return predicted_price, recommendations, None
+
+    except Exception as e:
+        return None, None, f"Prediction failed: {e}"
+
+@app.route('/')
+def index():
+    return render_template('index.html',
+        companies=df["Company"].unique(),
+        types=df["TypeName"].unique(),
+        rams=sorted(df["Ram"].unique()),
+        cpus=df["Cpu brand"].unique(),
+        gpus=df["Gpu brand"].unique(),
+        oss=df["os"].unique(),
+        predicted_price=None,
+        recommendations=None
+    )
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    predicted_price, recommendations, error = predict_price(request.form)
+    if error:
+        flash(error, 'error')
+        return redirect(url_for('index'))
+
+    return render_template('index.html',
+        companies=df["Company"].unique(),
+        types=df["TypeName"].unique(),
+        rams=sorted(df["Ram"].unique()),
+        cpus=df["Cpu brand"].unique(),
+        gpus=df["Gpu brand"].unique(),
+        oss=df["os"].unique(),
+        predicted_price=predicted_price,
+        recommendations=recommendations
+    )
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        errors = {}
+
+        if not username:
+            errors['username'] = "Username is required"
+        if not password:
+            errors['password'] = "Password is required"
+
+        if errors:
+            return render_template('login.html', errors=errors)
+
+        connection = create_connection()
+        if connection:
+            try:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+                user = cursor.fetchone()
+                cursor.close()
+
+                if user and check_password_hash(user['password'], password):
+                    session['user_id'] = user['uid']
+                    return redirect(url_for('dashboard'))
+                else:
+                    errors['general'] = "Invalid username or password"
+                    return render_template('login.html', errors=errors)
+
+            except Exception as e:
+                flash(f"Error: {e}", 'error')
+                return render_template('login.html', errors=errors)
+            finally:
+                close_connection(connection)
+
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        cpassword = request.form.get('confirmPassword')
+
+        if len(username) < 8:
+            flash('Username must be at least 8 characters long', 'error')
+            return redirect(url_for('signup'))
+
+        if not re.match(r'^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', email):
+            flash('Invalid email address', 'error')
+            return redirect(url_for('signup'))
+
+        if len(password) < 5:
+            flash('Password must be at least 5 characters long', 'error')
+            return redirect(url_for('signup'))
+
+        if password != cpassword:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('signup'))
+
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
+        connection = create_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(
+                    "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+                    (username, email, hashed_password)
+                )
+                connection.commit()
+                flash('Registration successful! Please login.', 'success')
+                return redirect(url_for('login'))
+            except Exception as e:
+                flash(f"Error: {e}", 'error')
+            finally:
+                cursor.close()
+                close_connection(connection)
+
+    return render_template('signup.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
+    from flask import Flask, flash, redirect, render_template, request, url_for, session
+import joblib
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from customModel import RandomForest, DecisionTree, KNNRecommender
+from werkzeug.security import generate_password_hash, check_password_hash
+from db_connection import create_connection, close_connection
+import re
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+# Load model with proper class definitions
+MODEL_PATH = Path("C:/Users/Lenovo/Desktop/project 2.0/jupyter/laptop_models.pkl")
+
+try:
+    saved_models = joblib.load(MODEL_PATH)
+    model = saved_models['model']
+    preprocessor = saved_models['preprocessor']
+    df = saved_models['df']
+    print("✅ Model loaded successfully!")
+except Exception as e:
+    print(f"❌ Failed to load model: {e}")
+    model = None
+    preprocessor = None
+    df = pd.DataFrame()
+
+def get_price_based_recommendations(predicted_price, n_recommendations=5, price_range=0.2):
+    """Get laptop recommendations within price range (±20% by default)"""
+    try:
+        lower_bound = predicted_price * (1 - price_range)
+        upper_bound = predicted_price * (1 + price_range)
+        
+        # Filter laptops within price range
+        price_filtered = df[
+            (df['Price'] >= lower_bound) & 
+            (df['Price'] <= upper_bound)
+        ].copy()
+        
+        if len(price_filtered) < n_recommendations:
+            # If not enough results, expand range
+            price_filtered = df[
+                (df['Price'] >= predicted_price * 0.8) & 
+                (df['Price'] <= predicted_price * 1.5)
+            ].copy()
+        
+        if len(price_filtered) == 0:
+            # If still no results, get closest priced laptops
+            df['price_diff'] = abs(df['Price'] - predicted_price)
+            price_filtered = df.sort_values('price_diff').head(n_recommendations)
+        else:
+            price_filtered['price_diff'] = abs(price_filtered['Price'] - predicted_price)
+        
+        recommendations = price_filtered.sort_values('price_diff').head(n_recommendations)
+        return recommendations.to_dict('records'), None
+    
+    except Exception as e:
+        return None, f"Recommendation error: {str(e)}"
+
+def predict_price(form_data):
+    try:
+        company = form_data.get('company')
+        type_ = form_data.get('type')
+        ram = int(form_data.get('ram'))
+        weight = float(form_data.get('weight'))
+        touchscreen = 1 if form_data.get('touchscreen') == 'Yes' else 0
+        ips = 1 if form_data.get('ips') == 'Yes' else 0
+        screen_size = float(form_data.get('screen_size'))
+        resolution = form_data.get('resolution')
+        cpu = form_data.get('cpu')
+        hdd = int(form_data.get('HDD'))
+        ssd = int(form_data.get('SSD'))
+        gpu = form_data.get('gpu')
+        os_ = form_data.get('os')
+
+        X_res, Y_res = map(int, resolution.lower().split('x'))
+        ppi = ((X_res**2 + Y_res**2) ** 0.5) / screen_size
+
+        input_dict = {
+            "Company": company,
+            "TypeName": type_,
+            "Ram": ram,
+            "Weight": weight,
+            "Touchscreen": touchscreen,
+            "Ips": ips,
+            "PPI": ppi,
+            "Cpu brand": cpu,
+            "HDD": hdd,
+            "SSD": ssd,
+            "Gpu brand": gpu,
+            "os": os_
+        }
+
+        input_df = pd.DataFrame([input_dict])
+
+        if preprocessor and model:
+            transformed = preprocessor.transform(input_df)
+            prediction = model.predict(transformed)[0]
+            predicted_price = int(np.round(np.exp(prediction), 2))
+            
+            # Get price-based recommendations
+            recommendations, rec_error = get_price_based_recommendations(predicted_price)
+            if rec_error:
+                print(f"Recommendation warning: {rec_error}")
+            
+            return predicted_price, recommendations, None
+        else:
+            return None, None, "Model or preprocessor not loaded."
+
+    except Exception as e:
+        return None, None, f"Prediction failed: {e}"
+
+@app.route('/')
+def index():
+    return render_template('index.html',
+        companies=df["Company"].unique(),
+        types=df["TypeName"].unique(),
+        rams=sorted(df["Ram"].unique()),
+        cpus=df["Cpu brand"].unique(),
+        gpus=df["Gpu brand"].unique(),
+        oss=df["os"].unique(),
+        predicted_price=None,
+        recommendations=None
+    )
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    predicted_price, recommendations, error = predict_price(request.form)
+    if error:
+        flash(error, 'error')
+        return redirect(url_for('index'))
+
+    return render_template('index.html',
+        companies=df["Company"].unique(),
+        types=df["TypeName"].unique(),
+        rams=sorted(df["Ram"].unique()),
+        cpus=df["Cpu brand"].unique(),
+        gpus=df["Gpu brand"].unique(),
+        oss=df["os"].unique(),
+        predicted_price=predicted_price,
+        recommendations=recommendations
+    )
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        errors = {}
+
+        if not username:
+            errors['username'] = "Username is required"
+        if not password:
+            errors['password'] = "Password is required"
+
+        if errors:
+            return render_template('login.html', errors=errors)
+
+        connection = create_connection()
+        if connection:
+            try:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+                user = cursor.fetchone()
+                cursor.close()
+
+                if user and check_password_hash(user['password'], password):
+                    session['user_id'] = user['uid']
+                    return redirect(url_for('dashboard'))
+                else:
+                    errors['general'] = "Invalid username or password"
+                    return render_template('login.html', errors=errors)
+
+            except Exception as e:
+                flash(f"Error: {e}", 'error')
+                return render_template('login.html', errors=errors)
+            finally:
+                close_connection(connection)
+
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        cpassword = request.form.get('confirmPassword')
+
+        if len(username) < 8:
+            flash('Username must be at least 8 characters long', 'error')
+            return redirect(url_for('signup'))
+
+        if not re.match(r'^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', email):
+            flash('Invalid email address', 'error')
+            return redirect(url_for('signup'))
+
+        if len(password) < 5:
+            flash('Password must be at least 5 characters long', 'error')
+            return redirect(url_for('signup'))
+
+        if password != cpassword:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('signup'))
+
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
+        connection = create_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(
+                    "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+                    (username, email, hashed_password)
+                )
+                connection.commit()
+                flash('Registration successful! Please login.', 'success')
+                return redirect(url_for('login'))
+            except Exception as e:
+                flash(f"Error: {e}", 'error')
+            finally:
+                cursor.close()
+                close_connection(connection)
+
+    return render_template('signup.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import NearestNeighbors
+from scipy.sparse import issparse
+import joblib
+
+print("Libraries imported successfully.")
+
+# 2. DATA LOADING AND PREPROCESSING
+df = pd.read_csv('laptop_data.csv')
+df.drop(columns=["Unnamed: 0"], inplace=True)
+
+# Data cleaning
+df["Ram"] = df["Ram"].str.replace("GB", "").astype("int")
+df["Weight"] = df["Weight"].str.replace("kg", "").astype("float")
+
+# Feature engineering
+df["Touchscreen"] = df["ScreenResolution"].apply(lambda x: 1 if "Touchscreen" in x else 0)
+df["Ips"] = df["ScreenResolution"].apply(lambda x: 1 if "IPS" in x else 0)
+
+# Process resolution
+temp = df["ScreenResolution"].str.split("x", n=1, expand=True)
+df["X_res"] = temp[0].str.replace(',', '').str.findall(r'(\d+\.?\d+)').apply(lambda x: x[0]).astype(int)
+df["Y_res"] = temp[1].astype(int)
+df['ppi'] = (((df['X_res']**2) + (df['Y_res']**2))**0.5 / df['Inches']).astype('float')
+df.drop(columns=["ScreenResolution", "X_res", "Y_res", "Inches"], inplace=True)
+
+# Process CPU
+df['Cpu Name'] = df['Cpu'].apply(lambda x: " ".join(x.split()[0:3]))
+def fetch_processor(text):
+    if text in ['Intel Core i7', 'Intel Core i5', 'Intel Core i3']:
+        return text
+    elif text.split()[0] == 'Intel':
+        return 'Other Intel Processor'
+    else:
+        return 'AMD Processor'
+df['Cpu brand'] = df['Cpu Name'].apply(fetch_processor)
+df.drop(columns=['Cpu', 'Cpu Name'], inplace=True)
+
+# Process Memory
+df['Memory'] = df['Memory'].astype(str).replace(r'\.0', '', regex=True)
+df["Memory"] = df["Memory"].str.replace('GB', '').str.replace('TB', '000')
+new = df["Memory"].str.split("+", n=1, expand=True)
+df["first"] = new[0].str.strip().str.replace(r'\D', '', regex=True).astype(int)
+df["second"] = new[1].fillna("0").str.replace(r'\D', '', regex=True).astype(int)
+df["HDD"] = (df["first"] * df["first"].apply(lambda x: 1 if "HDD" else 0)) + \
+            (df["second"] * df["second"].apply(lambda x: 1 if "HDD" else 0))
+df["SSD"] = (df["first"] * df["first"].apply(lambda x: 1 if "SSD" else 0)) + \
+            (df["second"] * df["second"].apply(lambda x: 1 if "SSD" else 0))
+df.drop(columns=['first', 'second', 'Memory'], inplace=True)
+
+# Process GPU
+df['Gpu brand'] = df['Gpu'].apply(lambda x: x.split()[0])
+df = df[df['Gpu brand'] != 'ARM']
+df.drop(columns=['Gpu'], inplace=True)
+
+# Process OS
+def cat_os(inp):
+    if inp in ['Windows 10', 'Windows 7', 'Windows 10 S']:
+        return 'Windows'
+    elif inp in ['macOS', 'Mac OS X']:
+        return 'Mac'
+    else:
+        return 'Others/No OS/Linux'
+df['os'] = df['OpSys'].apply(cat_os)
+df.drop(columns=['OpSys'], inplace=True)
+
+# Features and target
+X = df.drop(columns=['Price'])
+y = np.log(df['Price'])
+
+# Preprocessing pipeline
+cat_cols = ['Company', 'TypeName', 'Cpu brand', 'Gpu brand', 'os']
+num_cols = ['Ram', 'Weight', 'Touchscreen', 'Ips', 'ppi', 'HDD', 'SSD']
+
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), num_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
+])
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Transform
+X_train_transformed = preprocessor.fit_transform(X_train)
+X_test_transformed = preprocessor.transform(X_test)
+
+if issparse(X_train_transformed):
+    X_train_transformed = X_train_transformed.toarray()
+if issparse(X_test_transformed):
+    X_test_transformed = X_test_transformed.toarray()
+
+# 3. TRAIN MODELS USING SCIKIT-LEARN
+print("\nTraining Random Forest model...")
+rf_model = RandomForestRegressor(n_estimators=100, max_depth=10, max_features='sqrt', random_state=42)
+rf_model.fit(X_train_transformed, y_train)
+
+# Predictions and evaluation
+y_pred = rf_model.predict(X_test_transformed)
+print("\nModel Evaluation:")
+print(f"R2 Score: {r2_score(y_test, y_pred):.4f}")
+print(f"Mean Absolute Error: {mean_absolute_error(y_test, y_pred):.4f}")
+print(f"Root Mean Squared Error: {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
+
+print("\nSetting up KNN Recommender...")
+knn_recommender = NearestNeighbors(n_neighbors=11, metric='cosine')  # 10 neighbors + self
+knn_recommender.fit(X_train_transformed)
+
+# 4. SAVE EVERYTHING USING JOBLIB
+print("\nSaving with joblib...")
+joblib.dump({
+    'df': df,
+    'preprocessor': preprocessor,
+    'model': rf_model,
+    'knn_recommender': knn_recommender
+}, 'laptop_models.pkl')
+
+print("Saved successfully to laptop_models.pkl ✅")

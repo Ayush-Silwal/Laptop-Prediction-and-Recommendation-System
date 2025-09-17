@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - Laptop P&R</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/index-css.css') }}"
+    />
+    <style>
+      /* Sign Up Page Specific Styles */
+      .signup-container {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 2rem 4rem;
+      }
+
+      .signup-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 450px;
+        text-align: center;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .signup-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+        border-radius: 2px 2px 0 0;
+      }
+
+      .signup-header {
+        margin-bottom: 2rem;
+      }
+
+      .signup-header h1 {
+        font-size: 2.5rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .signup-header p {
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .home-link {
+        position: absolute;
+        top: 1.5rem;
+        left: 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: var(--dark);
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .home-link:hover {
+        color: var(--accent-1);
+        transform: translateX(-5px);
+      }
+
+      .home-link i {
+        margin-right: 8px;
+      }
+
+      .signup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .form-group {
+        position: relative;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-group label i {
+        color: var(--accent-1);
+        width: 20px;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--accent-1);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+      }
+
+      .form-group i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+      }
+
+      .signup-btn {
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+      }
+
+      .signup-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-text {
+        margin-top: 1.5rem;
+        color: #666;
+        font-size: 0.95rem;
+      }
+
+      .login-text a {
+        color: var(--accent-1);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .login-text a:hover {
+        color: var(--accent-2);
+        text-decoration: underline;
+      }
+
+      .error-container {
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .error-container ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .error-container li {
+        color: #dc3545; /* Bold red */
+        font-size: 1.2rem; /* Larger font size */
+        font-weight: bold; /* Bold text */
+        margin-bottom: 0.5rem;
+      }
+
+      .success-message {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      input.error-border {
+        border-color: var(--error-color);
+      }
+
+      input.success-border {
+        border-color: var(--success-color);
+      }
+
+      .flash-messages {
+        margin-bottom: 1rem;
+      }
+
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .flash-messages .error,
+      .flash-messages .danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      /* Responsive styles for signup page */
+      @media (max-width: 768px) {
+        .signup-card {
+          padding: 2rem;
+          margin: 1rem;
+        }
+
+        .signup-header h1 {
+          font-size: 2rem;
+        }
+
+        .home-link {
+          top: 1rem;
+          left: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .signup-card {
+          padding: 1.5rem;
+        }
+
+        .signup-header h1 {
+          font-size: 1.8rem;
+        }
+
+        .form-group input {
+          padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+        }
+
+        .form-group i.input-icon {
+          left: 0.8rem;
+        }
+
+        .error-container li {
+          font-size: 1rem; /* Slightly smaller for mobile */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+
+    <!-- Header -->
+    <header id="header">
+      <div class="header-container">
+        <div class="logo">
+          <i class="fas fa-laptop-code"></i>
+          Laptop P & R System
+        </div>
+        <nav>
+          <ul id="nav-menu">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('index') }}#prediction-form">Predict</a></li>
+            <li><a href="{{ url_for('index') }}#about">About</a></li>
+          </ul>
+        </nav>
+        <div class="auth-buttons">
+          <a href="{{ url_for('login') }}" class="auth-btn login-btn">Login</a>
+          <a href="{{ url_for('signup') }}" class="auth-btn signup-btn">Sign Up</a>
+        </div>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Signup Content -->
+    <main id="main-content" class="signup-container">
+      <div class="signup-card">
+        <a href="{{ url_for('index') }}" class="home-link">
+          <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="signup-header">
+          <h1>Create an Account</h1>
+          <p>Join today</p>
+        </div>
+
+        <!-- Error Messages -->
+        {% if errors %}
+        <div class="error-container">
+          <ul>
+            {% if errors.username %}
+            <li>{{ errors.username }}</li>
+            {% endif %}
+            {% if errors.email %}
+            <li>{{ errors.email }}</li>
+            {% endif %}
+            {% if errors.password %}
+            <li>{{ errors.password }}</li>
+            {% endif %}
+            {% if errors.confirmPassword %}
+            <li>{{ errors.confirmPassword }}</li>
+            {% endif %}
+            {% if errors.general %}
+            <li>{{ errors.general }}</li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Success Message -->
+        {% if success %}
+        <div class="success-message">
+          You have successfully signed up! <a href="{{ url_for('login') }}">Log in here</a>.
+        </div>
+        {% endif %}
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <ul>
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% endwith %}
+        </div>
+
+        <!-- Signup Form -->
+        <form
+          name="signupForm"
+          action="{{ url_for('signup') }}"
+          method="POST"
+          class="signup-form"
+        >
+          <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Enter your username"
+              value="{{ form_data.username | default('') }}"
+              class="{% if errors.username %}error-border{% endif %}"
+            />
+            <i class="fas fa-user input-icon"></i>
+          </div>
+
+          <div class="form-group">
+            <label for="email"><i class="fas fa-envelope"></i> Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              value="{{ form_data.email | default('') }}"
+              class="{% if errors.email %}error-border{% endif %}"
+            />
+            <i class="fas fa-envelope input-icon"></i>
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              value="{{ form_data.password | default('') }}"
+              class="{% if errors.password %}error-border{% endif %}"
+            />
+            <i class="fas fa-lock input-icon"></i>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password"><i class="fas fa-lock"></i> Confirm Password</label>
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirmPassword"
+              placeholder="Confirm your password"
+              value="{{ form_data.confirmPassword | default('') }}"
+              class="{% if errors.confirmPassword %}error-border{% endif %}"
+            />
+            <i class="fas fa-lock input-icon"></i>
+          </div>
+
+          <button type="submit" class="signup-btn">Sign Up</button>
+        </form>
+
+        <p class="login-text">
+          Already have an account?
+          <a href="{{ url_for('login') }}">Sign in here</a>
+        </p>
+      </div>
+    </main>
+
+    <script>
+      function validateSignupForm() {
+        let username = document.getElementById("username").value.trim();
+        let email = document.getElementById("email").value.trim();
+        let password = document.getElementById("password").value;
+        let confirmPassword = document.getElementById("confirm-password").value;
+        let isValid = true;
+
+        // Reset previous error states
+        document.getElementById("username").classList.remove("error-border", "success-border");
+        document.getElementById("email").classList.remove("error-border", "success-border");
+        document.getElementById("password").classList.remove("error-border", "success-border");
+        document.getElementById("confirm-password").classList.remove("error-border", "success-border");
+
+        // Validate username
+        if (username === "") {
+          document.getElementById("username").classList.add("error-border");
+          isValid = false;
+        } else if (!/^[A-Za-z][A-Za-z0-9]{7,19}$/.test(username)) {
+          document.getElementById("username").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("username").classList.add("success-border");
+        }
+
+        // Validate email
+        if (email === "") {
+          document.getElementById("email").classList.add("error-border");
+          isValid = false;
+        } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+          document.getElementById("email").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("email").classList.add("success-border");
+        }
+
+        // Validate password
+        if (password === "") {
+          document.getElementById("password").classList.add("error-border");
+          isValid = false;
+        } else if (password.length < 5) {
+          document.getElementById("password").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("password").classList.add("success-border");
+        }
+
+        // Validate confirm password
+        if (confirmPassword === "") {
+          document.getElementById("confirm-password").classList.add("error-border");
+          isValid = false;
+        } else if (password !== confirmPassword) {
+          document.getElementById("confirm-password").classList.add("error-border");
+          isValid = false;
+        } else {
+          document.getElementById("confirm-password").classList.add("success-border");
+        }
+
+        return isValid;
+      }
+
+      // Add form validation on submit
+      document.querySelector("form").addEventListener("submit", function (e) {
+        if (!validateSignupForm()) {
+          e.preventDefault();
+        }
+      });
+
+      // Add real-time validation
+      document.getElementById("username").addEventListener("blur", validateSignupForm);
+      document.getElementById("email").addEventListener("blur", validateSignupForm);
+      document.getElementById("password").addEventListener("blur", validateSignupForm);
+      document.getElementById("confirm-password").addEventListener("blur", validateSignupForm);
+    </script>
+  </body>
+</html>

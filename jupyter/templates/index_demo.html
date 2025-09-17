@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laptop Price Prediction & Recommendation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #D6EDFF;
+            --secondary: #ACD7EC;
+            --light: #FCFCFC;
+            --dark: #002626;
+            --accent-1: #4A90E2;
+            --accent-2: #50C878;
+            --accent-3: #FF6B6B;
+            --accent-4: #9B59B6;
+            --success-color: #4bb543;
+            --error-color: #ff3333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Header Styles */
+        header {
+            background: rgba(214, 237, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 38, 38, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        header.shrink {
+            padding: 0.8rem 2rem;
+        }
+        
+        header.shrink .logo {
+            font-size: 1.5rem;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            color: var(--dark);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 1.5rem;
+            position: relative;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        nav ul li a:hover, 
+        nav ul li a.active {
+            color: var(--accent-1);
+        }
+        
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background-color: var(--accent-1);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        nav ul li a:hover::after,
+        nav ul li a.active::after {
+            width: 100%;
+        }
+        
+        .auth-buttons a {
+            text-decoration: none;
+            margin-left: 1rem;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .login-btn {
+            color: var(--dark);
+            border: 2px solid var(--dark);
+        }
+        
+        .login-btn:hover {
+            background-color: var(--dark);
+            color: var(--light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .signup-btn {
+            background: linear-gradient(135deg, var(--dark), #001a1a);
+            color: var(--light);
+            box-shadow: 0 4px 8px rgba(0, 38, 38, 0.2);
+        }
+        
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 38, 38, 0.3);
+        }
+        
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 21px;
+            cursor: pointer;
+        }
+        
+        .hamburger span {
+            height: 3px;
+            width: 100%;
+            background-color: var(--dark);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 8rem 2rem 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100vh;
+        }
+        
+        .hero-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding-right: 2rem;
+        }
+        
+        .hero h1 {
+            font-size: 3.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            line-height: 1.2;
+        }
+        
+        .typewriter {
+            color: var(--accent-1);
+            border-right: 3px solid var(--accent-1);
+            animation: blink 1s step-end infinite;
+            display: inline-block;
+        }
+        
+        @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--accent-1); }
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            color: var(--dark);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--dark), #001a1a);
+            color: var(--light);
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 38, 38, 0.2);
+        }
+        
+        .cta-button.secondary {
+            background: transparent;
+            color: var(--dark);
+            border: 2px solid var(--dark);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 38, 38, 0.3);
+        }
+        
+        .cta-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .hero-image {
+            max-width: 50%;
+            text-align: center;
+            position: relative;
+        }
+        
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* Section Common Styles */
+        section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.8rem;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 5px;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            border-radius: 3px;
+        }
+        
+        .section-title p {
+            font-size: 1.2rem;
+            color: #555;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* About Section */
+        .about {
+            background: linear-gradient(to bottom, var(--light) 0%, var(--primary) 100%);
+            border-radius: 20px;
+            margin: 4rem auto;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .about::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .about-content {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .about-text {
+            flex: 1;
+        }
+        
+        .about-text h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+        
+        .about-text p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .tech-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .tech-item {
+            background: rgba(172, 215, 236, 0.3);
+            backdrop-filter: blur(5px);
+            padding: 0.7rem 1.8rem;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .tech-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .about-image {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .about-image img {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.5s ease;
+        }
+        
+        .about-image img:hover {
+            transform: scale(1.03);
+        }
+        
+        /* Features Section */
+        .features {
+            background-color: var(--light);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent-1), var(--accent-2));
+            transition: width 0.4s ease;
+            z-index: -1;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-15px) rotate(2deg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-card:hover::before {
+            width: 100%;
+            opacity: 0.1;
+        }
+        
+        .feature-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s ease;
+        }
+        
+        .feature-card:nth-child(1) .feature-icon { color: var(--accent-1); }
+        .feature-card:nth-child(2) .feature-icon { color: var(--accent-2); }
+        .feature-card:nth-child(3) .feature-icon { color: var(--accent-3); }
+        .feature-card:nth-child(4) .feature-icon { color: var(--accent-4); }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.2) rotate(10deg);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1.2rem;
+            color: var(--dark);
+        }
+        
+        .feature-card p {
+            color: #555;
+        }
+        
+        /* Demo Preview */
+        .demo-preview {
+            background: linear-gradient(to bottom, var(--primary) 0%, var(--light) 100%);
+            border-radius: 20px;
+            margin: 4rem auto;
+            padding: 5rem 2rem;
+        }
+        
+        .demo-container {
+            display: flex;
+            gap: 3rem;
+            align-items: stretch;
+        }
+        
+        .prediction-card, .recommendation-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .prediction-card:hover, .recommendation-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .demo-card-title {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            color: var(--dark);
+            text-align: center;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .demo-card-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            border-radius: 2px;
+        }
+        
+        .spec-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group label i {
+            color: var(--accent-1);
+            width: 20px;
+        }
+        
+        .form-group select, .form-group input {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        .predict-btn {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        
+        .predict-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .price-result {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+        
+        .price-tag {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 1rem 0;
+        }
+        
+        .confidence-bar {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+        
+        .confidence-level {
+            height: 100%;
+            width: 92%;
+            background: linear-gradient(to right, var(--accent-2), var(--accent-1));
+            border-radius: 5px;
+        }
+        
+        .confidence-text {
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .recommendation-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.8rem;
+            padding: 1.2rem;
+            background: linear-gradient(to right, rgba(214, 237, 255, 0.5), rgba(172, 215, 236, 0.3));
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .recommendation-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recommendation-item img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            margin-right: 1.2rem;
+            background-color: white;
+            padding: 0.8rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .rec-info h4 {
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .rec-info p {
+            color: #555;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .rec-info p i {
+            color: var(--accent-1);
+            width: 16px;
+        }
+        
+        .rec-price {
+            font-weight: 700;
+            color: var(--accent-1);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* How It Works */
+        .how-it-works {
+            background-color: var(--light);
+            position: relative;
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            position: relative;
+        }
+        
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            z-index: 1;
+            border-radius: 2px;
+        }
+        
+        .step {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards;
+        }
+        
+        .step:nth-child(1) { animation-delay: 0.2s; }
+        .step:nth-child(2) { animation-delay: 0.4s; }
+        .step:nth-child(3) { animation-delay: 0.6s; }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .step-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: 4px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 2rem;
+            color: var(--dark);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .step:hover .step-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .step h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        
+        .step p {
+            color: #555;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+        
+        /* Portfolio Section */
+        .portfolio {
+            background: linear-gradient(to bottom, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 20px;
+            margin: 4rem auto;
+            padding: 5rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .portfolio::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ACD7EC' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+        
+        .portfolio-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .portfolio-content p {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            text-align: left;
+        }
+        
+        .github-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .github-badge span {
+            margin: 0 0.8rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .github-badge i {
+            margin-right: 0.5rem;
+        }
+        
+        .portfolio-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .portfolio-link {
+            display: inline-flex;
+            align-items: center;
+            background: var(--dark);
+            color: var(--light);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .portfolio-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .portfolio-link i {
+            margin-right: 0.8rem;
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            background-color: var(--light);
+            position: relative;
+        }
+        
+        .testimonial-slider {
+            overflow: hidden;
+            position: relative;
+            margin-top: 3rem;
+        }
+        
+        .testimonial-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        
+        .testimonial-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            flex: 0 0 calc(33.333% - 2rem);
+            margin: 0 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 2rem;
+            color: #555;
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        .testimonial-text::before {
+            content: '"';
+            font-size: 5rem;
+            color: var(--primary);
+            position: absolute;
+            top: -1.5rem;
+            left: -1rem;
+            opacity: 0.3;
+            line-height: 1;
+        }
+        
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+        }
+        
+        .author-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 1.2rem;
+            border: 3px solid var(--primary);
+        }
+        
+        .author-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .author-info h4 {
+            margin-bottom: 0.3rem;
+            color: var(--dark);
+        }
+        
+        .author-info p {
+            font-size: 0.9rem;
+            color: #777;
+        }
+        
+        .testimonial-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .testimonial-nav button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            background-color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .testimonial-nav button.active {
+            background-color: var(--accent-1);
+            transform: scale(1.2);
+        }
+        
+        /* Footer */
+        footer {
+            background: linear-gradient(to bottom, var(--dark) 0%, #001a1a 100%);
+            color: var(--light);
+            padding: 5rem 2rem 2rem;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+        
+        .footer-col h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.8rem;
+        }
+        
+        .footer-col h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            border-radius: 2px;
+        }
+        
+        .footer-col p {
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .footer-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+        
+        .footer-links a:hover {
+            opacity: 1;
+            padding-left: 5px;
+            color: var(--accent-1);
+        }
+        
+        .newsletter-form {
+            display: flex;
+            margin-top: 1.5rem;
+        }
+        
+        .newsletter-form input {
+            flex-grow: 1;
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 1rem;
+        }
+        
+        .newsletter-form button {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border: none;
+            padding: 0 1.2rem;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: var(--light);
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background-color: var(--accent-1);
+            transform: translateY(-3px);
+        }
+        
+        .contact-button {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.7rem 1.5rem;
+            background: transparent;
+            color: var(--light);
+            border: 1px solid var(--light);
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-button:hover {
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .testimonial-card {
+                flex: 0 0 calc(50% - 2rem);
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 7rem 2rem 4rem;
+            }
+            
+            .hero-content {
+                padding-right: 0;
+                margin-bottom: 3rem;
+            }
+            
+            .hero-image {
+                max-width: 80%;
+            }
+            
+            .about-content, .demo-container {
+                flex-direction: column;
+            }
+            
+            .steps {
+                flex-direction: column;
+                gap: 4rem;
+            }
+            
+            .steps::before {
+                display: none;
+            }
+            
+            .testimonial-card {
+                flex: 0 0 calc(100% - 2rem);
+            }
+            
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(214, 237, 255, 0.98);
+                backdrop-filter: blur(10px);
+                padding: 1rem 0;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            nav ul.show {
+                display: flex;
+            }
+            
+            nav ul li {
+                margin: 0.5rem 1rem;
+            }
+            
+            .hamburger {
+                display: flex;
+            }
+            
+            .hamburger.active span:nth-child(1) {
+                transform: rotate(45deg) translate(5px, 5px);
+            }
+            
+            .hamburger.active span:nth-child(2) {
+                opacity: 0;
+            }
+            
+            .hamburger.active span:nth-child(3) {
+                transform: rotate(-45deg) translate(7px, -6px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: row;
+            }
+            
+            .auth-buttons {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .portfolio-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Accessibility Improvements */
+        a:focus, button:focus, select:focus {
+            outline: 2px solid var(--accent-1);
+            outline-offset: 2px;
+        }
+        
+        .skip-to-content {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--dark);
+            color: white;
+            padding: 8px;
+            z-index: 1000;
+            transition: top 0.3s;
+        }
+        
+        .skip-to-content:focus {
+            top: 0;
+        }
+        
+        /* Form Validation Styles */
+        .error {
+            color: var(--error-color);
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .error-message {
+            background-color: #ffebee;
+            border-left: 4px solid var(--error-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .error-message p {
+            margin: 0 0 10px 0;
+        }
+        
+        .error-message ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .prediction-result {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .prediction-result h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        .predicted-price {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--success-color);
+            margin: 15px 0;
+        }
+        
+        .login-prompt {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .green-button {
+            display: inline-block;
+            background-color: var(--success-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .green-button:hover {
+            background-color: #3a9e36;
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+    
+    <!-- Header -->
+    <header id="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-laptop-code"></i>
+                LaptopAI
+            </div>
+            <nav>
+                <ul id="nav-menu">
+                    <li><a href="#" class="active">Home</a></li>
+                    <li><a href="#prediction-form">Predict</a></li>
+                    <li><a href="#recommendations">Dashboard</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <a href="#" class="login-btn">Login</a>
+                <a href="#" class="signup-btn">Sign Up</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="main-content">
+        <div class="hero-content">
+            <h1>Smart Laptop <span class="typewriter" id="typewriter">Prediction</span></h1>
+            <p>Predict fair prices and discover the right laptop tailored to your needs using Machine Learning.</p>
+            <div class="cta-buttons">
+                <a href="#prediction-form" class="cta-button">Try Demo</a>
+                <a href="#about" class="cta-button secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1587614382346-4ec70e388b28?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="Laptop with AI visualization">
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="section-title">
+            <h2>About Our System</h2>
+            <p>How our machine learning system helps you make better laptop purchasing decisions</p>
+        </div>
+        <div class="about-content">
+            <div class="about-text">
+                <h3>Solving the Laptop Buying Dilemma</h3>
+                <p>Buying a laptop can be confusing with countless options and fluctuating prices. Our system eliminates the guesswork by providing accurate price predictions and personalized recommendations based on your specific needs.</p>
+                <p>Powered by advanced machine learning algorithms, we analyze market trends and technical specifications to ensure you get the best value for your money.</p>
+                <div class="tech-list">
+                    <span class="tech-item">Decision Trees</span>
+                    <span class="tech-item">Random Forest</span>
+                    <span class="tech-item">K-Nearest Neighbors</span>
+                    <span class="tech-item">Content Filtering</span>
+                </div>
+            </div>
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="AI and data visualization">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-title">
+            <h2>Key Features</h2>
+            <p>Discover what makes our system unique and powerful</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Price Prediction</h3>
+                <p>Get accurate market value estimates for any laptop configuration based on current market trends.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <h3>Smart Recommendations</h3>
+                <p>Receive personalized laptop suggestions tailored to your budget, usage needs, and preferences.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <h3>Model Comparison</h3>
+                <p>Compare different laptop models side by side to make informed purchasing decisions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3>Data-Driven Insights</h3>
+                <p>Our ML models continuously learn from market data to provide the most accurate predictions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Preview -->
+    <section class="demo-preview" id="prediction-form">
+        <div class="section-title">
+            <h2>Laptop Price Prediction</h2>
+            <p>Enter your laptop specifications to get an accurate price prediction</p>
+        </div>
+        
+        {% if predicted_price %}
+        <div class="prediction-result">
+            <h2>Prediction Result</h2>
+            <div class="predicted-price">RS {{ predicted_price }}</div>
+            <p class="login-prompt">Want to save your prediction history? Login now</p>
+            <a class="green-button" href="/login">Login</a>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error-message">
+            <p><strong>Error:</strong> {{ error }}</p>
+            {% if 'not loaded properly' in error %}
+            <p>Please check the following:</p>
+            <ul>
+                <li>The file 'laptop_models_full_custom.pkl' exists at 'C:\Users\Lenovo\Desktop\project 2.0\jupyter\laptop_models_full_custom.pkl'</li>
+                <li>The file contains properly saved model data</li>
+                <li>You have all required dependencies installed</li>
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="demo-container">
+            <div class="prediction-card">
+                <h3 class="demo-card-title">Price Prediction</h3>
+                <form action="/predict" method="post" id="prediction-form">
+                    <div class="spec-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="company"><i class="fas fa-tag"></i> Brand</label>
+                                <select name="company" id="company">
+                                    <option value="Apple" {% if form_data and form_data.company == 'Apple' %}selected{% endif %}>Apple</option>
+                                    <option value="Dell" {% if form_data and form_data.company == 'Dell' %}selected{% endif %}>Dell</option>
+                                    <option value="HP" {% if form_data and form_data.company == 'HP' %}selected{% endif %}>HP</option>
+                                    <option value="Lenovo" {% if form_data and form_data.company == 'Lenovo' %}selected{% endif %}>Lenovo</option>
+                                    <option value="Asus" {% if form_data and form_data.company == 'Asus' %}selected{% endif %}>Asus</option>
+                                    <option value="Acer" {% if form_data and form_data.company == 'Acer' %}selected{% endif %}>Acer</option>
+                                    <option value="MSI" {% if form_data and form_data.company == 'MSI' %}selected{% endif %}>MSI</option>
+                                    <option value="Toshiba" {% if form_data and form_data.company == 'Toshiba' %}selected{% endif %}>Toshiba</option>
+                                    <option value="Samsung" {% if form_data and form_data.company == 'Samsung' %}selected{% endif %}>Samsung</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="type"><i class="fas fa-laptop"></i> Type</label>
+                                <select name="type" id="type">
+                                    <option value="Ultrabook" {% if form_data and form_data.type == 'Ultrabook' %}selected{% endif %}>Ultrabook</option>
+                                    <option value="Notebook" {% if form_data and form_data.type == 'Notebook' %}selected{% endif %}>Notebook</option>
+                                    <option value="Gaming" {% if form_data and form_data.type == 'Gaming' %}selected{% endif %}>Gaming</option>
+                                    <option value="2 in 1 Convertible" {% if form_data and form_data.type == '2 in 1 Convertible' %}selected{% endif %}>2 in 1 Convertible</option>
+                                    <option value="Workstation" {% if form_data and form_data.type == 'Workstation' %}selected{% endif %}>Workstation</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ram"><i class="fas fa-memory"></i> RAM (GB)</label>
+                                <select name="ram" id="ram">
+                                    <option value="2" {% if form_data and form_data.ram == '2' %}selected{% endif %}>2</option>
+                                    <option value="4" {% if form_data and form_data.ram == '4' %}selected{% endif %}>4</option>
+                                    <option value="8" {% if form_data and form_data.ram == '8' %}selected{% endif %}>8</option>
+                                    <option value="16" {% if form_data and form_data.ram == '16' %}selected{% endif %}>16</option>
+                                    <option value="32" {% if form_data and form_data.ram == '32' %}selected{% endif %}>32</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
+                                <input type="number" name="weight" id="weight" step="0.01" value="{% if form_data %}{{ form_data.weight }}{% else %}2.0{% endif %}">
+                                <span id="weightError" class="error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="touchscreen"><i class="fas fa-touchpad"></i> Touchscreen</label>
+                                <select name="touchscreen" id="touchscreen">
+                                    <option value="No" {% if form_data and form_data.touchscreen == 'No' %}selected{% endif %}>No</option>
+                                    <option value="Yes" {% if form_data and form_data.touchscreen == 'Yes' %}selected{% endif %}>Yes</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ips"><i class="fas fa-desktop"></i> IPS Display</label>
+                                <select name="ips" id="ips">
+                                    <option value="No" {% if form_data and form_data.ips == 'No' %}selected{% endif %}>No</option>
+                                    <option value="Yes" {% if form_data and form_data.ips == 'Yes' %}selected{% endif %}>Yes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="screen_size"><i class="fas fa-expand"></i> Screen Size (Inches)</label>
+                                <input type="number" name="screen_size" id="screen_size" step="0.1" value="{% if form_data %}{{ form_data.screen_size }}{% else %}15.6{% endif %}">
+                                <span id="screenSizeError" class="error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="resolution"><i class="fas fa-desktop"></i> Resolution</label>
+                                <select name="resolution" id="resolution">
+                                    <option value="1920x1080" {% if form_data and form_data.resolution == '1920x1080' %}selected{% endif %}>1920x1080</option>
+                                    <option value="1366x768" {% if form_data and form_data.resolution == '1366x768' %}selected{% endif %}>1366x768</option>
+                                    <option value="1600x900" {% if form_data and form_data.resolution == '1600x900' %}selected{% endif %}>1600x900</option>
+                                    <option value="3840x2160" {% if form_data and form_data.resolution == '3840x2160' %}selected{% endif %}>3840x2160</option>
+                                    <option value="3200x1800" {% if form_data and form_data.resolution == '3200x1800' %}selected{% endif %}>3200x1800</option>
+                                    <option value="2880x1800" {% if form_data and form_data.resolution == '2880x1800' %}selected{% endif %}>2880x1800</option>
+                                    <option value="2560x1600" {% if form_data and form_data.resolution == '2560x1600' %}selected{% endif %}>2560x1600</option>
+                                    <option value="2560x1440" {% if form_data and form_data.resolution == '2560x1440' %}selected{% endif %}>2560x1440</option>
+                                    <option value="2304x1440" {% if form_data and form_data.resolution == '2304x1440' %}selected{% endif %}>2304x1440</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cpu"><i class="fas fa-microchip"></i> CPU Brand</label>
+                                <select name="cpu" id="cpu">
+                                    <option value="Intel Core i5" {% if form_data and form_data.cpu == 'Intel Core i5' %}selected{% endif %}>Intel Core i5</option>
+                                    <option value="Intel Core i7" {% if form_data and form_data.cpu == 'Intel Core i7' %}selected{% endif %}>Intel Core i7</option>
+                                    <option value="AMD" {% if form_data and form_data.cpu == 'AMD' %}selected{% endif %}>AMD</option>
+                                    <option value="Intel Core i3" {% if form_data and form_data.cpu == 'Intel Core i3' %}selected{% endif %}>Intel Core i3</option>
+                                    <option value="Other Intel" {% if form_data and form_data.cpu == 'Other Intel' %}selected{% endif %}>Other Intel</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="HDD"><i class="fas fa-hdd"></i> HDD (GB)</label>
+                                <select name="HDD" id="HDD">
+                                    <option value="0" {% if form_data and form_data.HDD == '0' %}selected{% endif %}>0</option>
+                                    <option value="128" {% if form_data and form_data.HDD == '128' %}selected{% endif %}>128</option>
+                                    <option value="256" {% if form_data and form_data.HDD == '256' %}selected{% endif %}>256</option>
+                                    <option value="512" {% if form_data and form_data.HDD == '512' %}selected{% endif %}>512</option>
+                                    <option value="1024" {% if form_data and form_data.HDD == '1024' %}selected{% endif %}>1024</option>
+                                    <option value="2048" {% if form_data and form_data.HDD == '2048' %}selected{% endif %}>2048</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="SSD"><i class="fas fa-hdd"></i> SSD (GB)</label>
+                                <select name="SSD" id="SSD">
+                                    <option value="0" {% if form_data and form_data.SSD == '0' %}selected{% endif %}>0</option>
+                                    <option value="128" {% if form_data and form_data.SSD == '128' %}selected{% endif %}>128</option>
+                                    <option value="256" {% if form_data and form_data.SSD == '256' %}selected{% endif %}>256</option>
+                                    <option value="512" {% if form_data and form_data.SSD == '512' %}selected{% endif %}>512</option>
+                                    <option value="1024" {% if form_data and form_data.SSD == '1024' %}selected{% endif %}>1024</option>
+                                </select>
+                                <span id="storageError" class="error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gpu"><i class="fas fa-microchip"></i> GPU Brand</label>
+                                <select name="gpu" id="gpu">
+                                    <option value="Intel" {% if form_data and form_data.gpu == 'Intel' %}selected{% endif %}>Intel</option>
+                                    <option value="AMD" {% if form_data and form_data.gpu == 'AMD' %}selected{% endif %}>AMD</option>
+                                    <option value="Nvidia" {% if form_data and form_data.gpu == 'Nvidia' %}selected{% endif %}>Nvidia</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="os"><i class="fas fa-window-restore"></i> OS Type</label>
+                                <select name="os" id="os">
+                                    <option value="Windows" {% if form_data and form_data.os == 'Windows' %}selected{% endif %}>Windows</option>
+                                    <option value="Mac" {% if form_data and form_data.os == 'Mac' %}selected{% endif %}>Mac</option>
+                                    <option value="Linux/No OS" {% if form_data and form_data.os == 'Linux/No OS' %}selected{% endif %}>Linux/No OS</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="predict-btn">Predict Price</button>
+                    </div>
+                </form>
+                <div class="price-result" id="price-result" style="display: none;">
+                    <p>Estimated Value</p>
+                    <div class="price-tag" id="price-tag">$550 - $650</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-level"></div>
+                    </div>
+                    <p class="confidence-text" id="confidence-text">92% Prediction Confidence</p>
+                </div>
+            </div>
+            <div class="recommendation-card" id="recommendations">
+                <h3 class="demo-card-title">Recommendations</h3>
+                <p class="rec-for">Recommended for Students:</p>
+                <div class="recommendation-item">
+                    <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Laptop">
+                    <div class="rec-info">
+                        <h4>HP Pavilion 14</h4>
+                        <p><i class="fas fa-microchip"></i> Intel i5-1135G7</p>
+                        <p><i class="fas fa-memory"></i> 8GB RAM</p>
+                        <p><i class="fas fa-hdd"></i> 512GB SSD</p>
+                        <p class="rec-price">$649</p>
+                    </div>
+                </div>
+                <div class="recommendation-item">
+                    <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Laptop">
+                    <div class="rec-info">
+                        <h4>Lenovo Ideapad 3</h4>
+                        <p><i class="fas fa-microchip"></i> AMD Ryzen 5 5500U</p>
+                        <p><i class="fas fa-memory"></i> 8GB RAM</p>
+                        <p><i class="fas fa-hdd"></i> 256GB SSD</p>
+                        <p class="rec-price">$579</p>
+                    </div>
+                </div>
+                <div class="recommendation-item">
+                    <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Laptop">
+                    <div class="rec-info">
+                        <h4>Acer Aspire 5</h4>
+                        <p><i class="fas fa-microchip"></i> Intel i5-1135G7</p>
+                        <p><i class="fas fa-memory"></i> 8GB RAM</p>
+                        <p><i class="fas fa-hdd"></i> 512GB SSD</p>
+                        <p class="rec-price">$599</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="section-title">
+            <h2>How It Works</h2>
+            <p>Our simple process to get accurate laptop predictions and recommendations</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3>Enter Specifications</h3>
+                <p>Provide laptop specs or your usage requirements</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3>ML Model Predicts</h3>
+                <p>Our algorithms analyze and predict the fair price</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <h3>Get Recommendations</h3>
+                <p>Receive personalized laptop suggestions</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section class="portfolio">
+        <div class="section-title">
+            <h2>About The Project</h2>
+            <p>This machine learning project was developed as part of a college AI portfolio</p>
+        </div>
+        <div class="portfolio-content">
+            <div class="github-badge">
+                <span><i class="fas fa-star"></i> 128</span>
+                <span><i class="fas fa-code-branch"></i> 42</span>
+            </div>
+            <p>This Laptop Price Prediction and Recommendation System is a showcase of practical machine learning application development. The project demonstrates the implementation of various ML algorithms to solve real-world problems in e-commerce and consumer decision-making.</p>
+            <p>Developed by a team of AI enthusiasts, this system represents our passion for creating intelligent solutions that make technology more accessible to everyone.</p>
+            <div class="portfolio-links">
+                <a href="#" class="portfolio-link">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+                <a href="#" class="portfolio-link">
+                    <i class="fas fa-blog"></i> Read Blog Post
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="section-title">
+            <h2>What Users Say</h2>
+            <p>Discover how our system has helped people make better laptop purchases</p>
+        </div>
+        <div class="testimonial-slider">
+            <div class="testimonial-track">
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                        This system helped me avoid overpaying for my laptop! The price prediction was spot on, and I saved about $200 compared to what I was about to pay.
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Sarah Johnson">
+                        </div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <p>Student</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                        As a developer, I have specific needs for my work machine. The recommendation system found me the perfect laptop that balances performance and portability.
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Chen">
+                        </div>
+                        <div class="author-info">
+                            <h4>Michael Chen</h4>
+                            <p>Software Developer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                        I was confused between so many options for gaming laptops. The comparison feature and personalized recommendations made my decision so much easier!
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Alex Rodriguez">
+                        </div>
+                        <div class="author-info">
+                            <h4>Alex Rodriguez</h4>
+                            <p>Gamer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-nav">
+                <button class="active"></button>
+                <button></button>
+                <button></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>LaptopAI</h3>
+                <p>Smart laptop price prediction and recommendation system powered by machine learning.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#prediction-form">Predict Price</a></li>
+                    <li><a href="#recommendations">Get Recommendations</a></li>
+                    <li><a href="#">Compare Models</a></li>
+                    <li><a href="#">Dashboard</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">How It Works</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">API</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Stay Updated</h3>
+                <p>Subscribe to our newsletter for the latest updates and features.</p>
+                <div class="newsletter-form">
+                    <input type="email" placeholder="Your email address">
+                    <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <a href="#" class="contact-button">Contact Us</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 LaptopAI. All rights reserved. This is a college project showcase.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Typewriter effect
+        const typewriterElement = document.getElementById('typewriter');
+        const words = ['Prediction', 'Recommendation', 'Comparison'];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typingDelay = 100;
+        let deletingDelay = 50;
+        let pauseDelay = 1500;
+        
+        function type() {
+            const currentWord = words[wordIndex];
+            
+            if (isDeleting) {
+                typewriterElement.textContent = currentWord.substring(0, charIndex - 1);
+                charIndex--;
+                typingDelay = deletingDelay;
+            } else {
+                typewriterElement.textContent = currentWord.substring(0, charIndex + 1);
+                charIndex++;
+                typingDelay = 100;
+            }
+            
+            if (!isDeleting && charIndex === currentWord.length) {
+                typingDelay = pauseDelay;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+                typingDelay = 500;
+            }
+            
+            setTimeout(type, typingDelay);
+        }
+        
+        // Initialize typewriter effect
+        setTimeout(type, 1000);
+        
+        // Sticky header
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('shrink');
+            } else {
+                header.classList.remove('shrink');
+            }
+        });
+        
+        // Mobile navigation
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('nav-menu');
+        
+        hamburger.addEventListener('click', function() {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('show');
+        });
+        
+        // Testimonial slider
+        const testimonialTrack = document.querySelector('.testimonial-track');
+        const testimonialCards = document.querySelectorAll('.testimonial-card');
+        const testimonialNav = document.querySelectorAll('.testimonial-nav button');
+        let currentIndex = 0;
+        
+        function moveSlider(index) {
+            const cardWidth = testimonialCards[0].offsetWidth + 32; // width + margin
+            testimonialTrack.style.transform = `translateX(-${index * cardWidth}px)`;
+            
+            // Update navigation buttons
+            testimonialNav.forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            currentIndex = index;
+        }
+        
+        // Set up navigation buttons
+        testimonialNav.forEach((button, index) => {
+            button.addEventListener('click', () => moveSlider(index));
+        });
+        
+        // Auto-rotate testimonials
+        setInterval(() => {
+            let nextIndex = (currentIndex + 1) % testimonialNav.length;
+            moveSlider(nextIndex);
+        }, 5000);
+        
+        // Form validation
+        document.getElementById('prediction-form').addEventListener('submit', function (event) {
+            var screenSizeInput = document.getElementById('screen_size');
+            var screenSizeError = document.getElementById('screenSizeError');
+            var weightInput = document.getElementById('weight');
+            var weightError = document.getElementById('weightError');
+            var hddInput = document.getElementById('HDD');
+            var ssdInput = document.getElementById('SSD');
+            var storageError = document.getElementById('storageError');
+    
+            var isValid = true;
+    
+            // Validate Screen Size
+            var screenSizeValue = parseFloat(screenSizeInput.value);
+            if (isNaN(screenSizeValue) || screenSizeValue < 10 || screenSizeValue > 17) {
+                event.preventDefault(); 
+                screenSizeError.textContent = "Screen size must be between 10 and 17 inches.";
+                isValid = false;
+            } else {
+                screenSizeError.textContent = ""; 
+            }
+    
+            // Validate Weight
+            var weightValue = parseFloat(weightInput.value);
+            if (isNaN(weightValue)) {
+                event.preventDefault(); 
+                weightError.textContent = "Please enter a valid weight.";
+                isValid = false;
+            } else if (weightValue < 1 || weightValue > 4) {
+                event.preventDefault(); 
+                weightError.textContent = "Weight must be between 1 kg and 4 kg.";
+                isValid = false;
+            } else {
+                weightError.textContent = ""; 
+            }
+    
+            // Validate HDD or SSD Selection
+            var hddValue = parseInt(hddInput.value);
+            var ssdValue = parseInt(ssdInput.value);
+            if (hddValue === 0 && ssdValue === 0) {
+                event.preventDefault();  
+                storageError.textContent = "You must select a non-zero value for either HDD or SSD.";
+                isValid = false;
+            } else {
+                storageError.textContent = ""; 
+            }
+    
+            return isValid;
+        });
+        
+        // Initialize animations when elements come into view
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate');
+                }
+            });
+        }, observerOptions);
+        
+        // Observe elements for animation
+        document.querySelectorAll('.feature-card, .step, .testimonial-card').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
