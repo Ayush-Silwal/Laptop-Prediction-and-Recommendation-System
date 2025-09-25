@@ -60,6 +60,7 @@ def load_models():
         rf_model = loaded_data.get('random_forest')
         knn_model = loaded_data.get('knn')
         kmeans_model = loaded_data.get('kmeans')
+        metadata = loaded_data.get('metadata', {})
 
         if df.empty or preprocessor is None or rf_model is None or knn_model is None or kmeans_model is None:
             raise ValueError("Essential model components missing")
@@ -70,14 +71,80 @@ def load_models():
         gpus = sorted(df['Gpu brand'].unique().tolist()) if 'Gpu brand' in df.columns else DEFAULT_GPUS
         oss = sorted(df['os'].unique().tolist()) if 'os' in df.columns else DEFAULT_OSS
 
-        print("Model loaded successfully.")
+        # Load feature weights from saved model or try to load from feature_config.json
+        try:
+            import json
+            with open('feature_config.json', 'r') as f:
+                feature_config = json.load(f)
+                feature_weights = np.array(feature_config['weights'])
+                print(f"Loaded feature weights from config file: {len(feature_weights)} features")
+        except:
+            # Fallback: use RF feature importance if available
+            if hasattr(rf_model, 'feature_importances_') and rf_model.feature_importances_ is not None:
+                feature_weights = rf_model.feature_importances_.copy()
+                feature_weights = feature_weights / feature_weights.max()  # Normalize
+                feature_weights = feature_weights * 2 + 0.5  # Scale to [0.5, 2.5]
+                print(f"Using Random Forest feature importance as weights: {len(feature_weights)} features")
+            else:
+                # Create balanced weights
+                sample_transform = preprocessor.transform(df.head(1).drop(columns=['Price']))
+                if hasattr(sample_transform, 'toarray'):
+                    sample_transform = sample_transform.toarray()
+                actual_feature_count = sample_transform.shape[1]
+                
+                # Enhanced feature weights based on domain knowledge
+                base_weights = [
+                    2.5,  # RAM - very important for performance
+                    2.0,  # Storage (SSD/HDD) - important for speed
+                    1.8,  # Weight - portability factor
+                    1.8,  # PPI - display quality
+                    1.5,  # Price-related features
+                    1.2,  # CPU - baseline importance
+                    1.2,  # GPU - baseline importance
+                    1.0,  # Touchscreen/IPS
+                    0.8,  # Secondary features
+                ]
+                
+                # Extend to match actual feature count
+                feature_weights = np.ones(actual_feature_count)
+                for i, weight in enumerate(base_weights):
+                    if i < actual_feature_count:
+                        feature_weights[i] = weight
+                
+                print(f"Using default enhanced feature weights: {actual_feature_count} features")
+
+        # Configure enhanced KNN settings
+        if hasattr(knn_model, 'set_feature_weights'):
+            knn_model.set_feature_weights(feature_weights)
+            print("Feature weights applied to KNN model")
+
+        # Set KNN parameters if they exist
+        if hasattr(knn_model, 'metric'):
+            knn_model.metric = 'hybrid'
+            print("KNN metric set to hybrid")
+        if hasattr(knn_model, 'weights'):
+            knn_model.weights = 'distance'
+            print("KNN weights set to distance-based")
+
+        # Print model performance if available
+        if metadata:
+            print(f"\nModel Performance Summary:")
+            rf_perf = metadata.get('rf_performance', {})
+            knn_perf = metadata.get('knn_performance', {})
+            ensemble_perf = metadata.get('ensemble_performance', {})
+            
+            if rf_perf:
+                print(f"  Random Forest R²: {rf_perf.get('test_r2', 'N/A'):.4f}")
+            if knn_perf:
+                print(f"  KNN R²: {knn_perf.get('test_r2', 'N/A'):.4f}")
+            if ensemble_perf:
+                print(f"  Ensemble R²: {ensemble_perf.get('test_r2', 'N/A'):.4f}")
+
+        print("Enhanced models loaded and configured successfully.")
     except Exception as e:
         print(f"Error loading model: {str(e)}")
         print("Using default values.")
         kmeans_model = None
-
-# Load models when the server starts
-load_models()
 
 def calculate_ppi(resolution, screen_size):
     """Calculate PPI from resolution (e.g., '1920x1080') and screen size (inches)."""
@@ -88,6 +155,46 @@ def calculate_ppi(resolution, screen_size):
     except Exception as e:
         raise ValueError(f"Invalid resolution or screen size: {str(e)}")
 
+def debug_recommendations(X_input, df, preprocessor, knn_model, top_n=5):
+    """Debug function to help understand recommendation process"""
+    print("\n=== DEBUG: Recommendation Process ===")
+    print(f"Input shape: {X_input.shape}")
+    print(f"Dataset shape: {df.shape}")
+    
+    # Get training data
+    X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
+    if hasattr(X_train_transformed, 'toarray'):
+        X_train_transformed = X_train_transformed.toarray()
+    print(f"Training data shape: {X_train_transformed.shape}")
+    
+    # Calculate similarities
+    similarities = []
+    for i in range(min(10, len(X_train_transformed))):  # Test first 10
+        sample = X_train_transformed[i]
+        
+        # Try different similarity methods
+        dot_product = np.dot(X_input[0], sample)
+        norm_a = np.linalg.norm(X_input[0])
+        norm_b = np.linalg.norm(sample)
+        basic_cosine = dot_product / (norm_a * norm_b) if norm_a > 0 and norm_b > 0 else 0
+        
+        similarities.append((basic_cosine, i))
+        print(f"Sample {i}: Cosine similarity = {basic_cosine:.4f}")
+    
+    # Sort and show top results
+    similarities.sort(reverse=True)
+    print(f"\nTop 3 similarities:")
+    for i, (sim, idx) in enumerate(similarities[:3]):
+        laptop = df.iloc[idx]
+        print(f"  {i+1}. {laptop.get('Company', 'Unknown')} {laptop.get('TypeName', 'Laptop')} - Similarity: {sim:.4f}")
+    
+    print("=== END DEBUG ===\n")
+    return similarities
+
+# Load models when the server starts
+load_models()
+
+# Route definitions
 @app.route('/', endpoint='index')
 def home():
     return render_template('index.html',
@@ -150,102 +257,225 @@ def predict():
         # Price prediction using RandomForest
         prediction = rf_model.predict(X_transformed)
         predicted_price = np.exp(prediction[0])  # Reverse log transformation
-        formatted_price = f"RS {predicted_price:,.2f}"  # Fixed: Single RS prefix
+        formatted_price = f"₹{predicted_price:,.2f}"  # Fixed: Single currency symbol
 
-        # Recommendations using CustomKNN
+        # Enhanced recommendations with price filtering and diversity
         recommendations = []
         if knn_model and hasattr(knn_model, 'get_similar_laptops'):
-            recommendations = knn_model.get_similar_laptops(X_transformed, df, top_n=5)
+            recommendations = knn_model.get_similar_laptops(X_transformed, df, top_n=5, price_range_factor=0.3)
         else:
-            # Fallback: Manual KNN recommendation with improved formatting
+            # Add debug information
+            print("Using fallback KNN method")
+            debug_recommendations(X_transformed, df, preprocessor, knn_model, top_n=5)
+            # Enhanced fallback with price filtering and diversity
             distances = []
             X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
             if hasattr(X_train_transformed, 'toarray'):
                 X_train_transformed = X_train_transformed.toarray()
+            
+            # Calculate similarities more carefully
             for i, sample in enumerate(X_train_transformed):
-                cosine_sim = knn_model._cosine_similarity(X_transformed[0], sample)
-                distances.append((cosine_sim, i))
-            top_indices = [idx for _, idx in sorted(distances, reverse=True)[:5]]
-            for i, idx in enumerate(top_indices):
+                # Use simple cosine similarity if hybrid methods aren't available
+                if hasattr(knn_model, '_hybrid_similarity') and hasattr(knn_model, 'feature_weights'):
+                    sim = knn_model._hybrid_similarity(X_transformed[0], sample, knn_model.feature_weights)
+                elif hasattr(knn_model, '_cosine_similarity'):
+                    # Use cosine similarity with feature weights if available
+                    weights = getattr(knn_model, 'feature_weights', None)
+                    sim = knn_model._cosine_similarity(X_transformed[0], sample, weights)
+                else:
+                    # Fallback to basic cosine similarity
+                    dot_product = np.dot(X_transformed[0], sample)
+                    norm_a = np.linalg.norm(X_transformed[0])
+                    norm_b = np.linalg.norm(sample)
+                    sim = dot_product / (norm_a * norm_b) if norm_a > 0 and norm_b > 0 else 0
+                
+                # Apply price-based boost/penalty
+                laptop_price = df.iloc[i]['Price']
+                price_factor = 1.0
+                if 0.7 * predicted_price <= laptop_price <= 1.3 * predicted_price:
+                    price_factor = 1.2
+                elif 0.5 * predicted_price <= laptop_price <= 1.5 * predicted_price:
+                    price_factor = 1.0
+                else:
+                    price_factor = 0.8
+                
+                final_score = sim * price_factor
+                distances.append((final_score, i))
+            
+            # Sort by final score (descending)
+            distances.sort(reverse=True)
+            seen_companies = set()
+            seen_types = set()
+            
+            for similarity_score, idx in distances:
+                if len(recommendations) >= 5:
+                    break
+                    
                 rec = df.iloc[idx].to_dict()
+                company = rec.get('Company', 'Unknown')
+                type_name = rec.get('TypeName', 'Laptop')
+                
+                # Ensure diversity
+                company_count = sum(1 for r in recommendations if r.get('Company') == company)
+                type_key = f"{company}-{type_name}"
+                
+                if company_count >= 2 or type_key in seen_types:
+                    continue
+                    
+                seen_companies.add(company)
+                seen_types.add(type_key)
+                
+                # Build enhanced recommendation
                 storage_parts = []
                 if rec.get('SSD', 0) > 0:
                     storage_parts.append(f"{int(rec['SSD'])}GB SSD")
                 if rec.get('HDD', 0) > 0:
                     storage_parts.append(f"{int(rec['HDD'])}GB HDD")
                 storage = " + ".join(storage_parts) if storage_parts else "No storage info"
+                
                 features = []
                 if rec.get('Touchscreen', 0):
                     features.append('Touchscreen')
                 if rec.get('Ips', 0):
                     features.append('IPS Display')
-                features_text = ', '.join(features) if features else 'Standard Features'
+                
+                ram_val = rec.get('Ram', 0)
+                ssd_val = rec.get('SSD', 0)
+                if ram_val >= 16 and ssd_val >= 512:
+                    features.append('High Performance')
+                elif ram_val >= 8 and ssd_val >= 256:
+                    features.append('Mid Performance')
+                else:
+                    features.append('Basic Performance')
+                
                 recommendations.append({
-                    'Company': rec.get('Company', 'Unknown'),
-                    'TypeName': rec.get('TypeName', 'Laptop'),
-                    'Title': f"{rec.get('Company', 'Unknown')} {rec.get('TypeName', 'Laptop')}",
+                    'Company': company,
+                    'TypeName': type_name,
+                    'Title': f"{company} {type_name}",
                     'Ram': f"{int(rec.get('Ram', 0))}GB",
                     'Storage': storage,
                     'Cpu_brand': rec.get('Cpu brand', 'Unknown'),
                     'Gpu_brand': rec.get('Gpu brand', 'Unknown'),
                     'Weight': f"{rec.get('Weight', 0):.1f}kg" if rec.get('Weight', 0) > 0 else "Weight N/A",
-                    'Price': f"RS {rec.get('Price', 0):,.2f}",
-                    'Similarity': f"{distances[i][0]:.2f}",
-                    'Features': features_text,
+                    'Price': rec.get('Price', 0),
+                    'Similarity': f"{similarity_score:.3f}",  # This is what index.html expects
+                    'Features': ', '.join(features) if features else 'Standard Features',
                     'Touchscreen': 'Yes' if rec.get('Touchscreen', 0) else 'No',
                     'Ips': 'Yes' if rec.get('Ips', 0) else 'No',
                     'os': rec.get('os', 'Unknown OS')
                 })
 
-        # Clustering using CustomKMeans
+        # Enhanced clustering with dynamic naming
         cluster_label = None
         cluster_examples = []
         cluster_name = "Unknown Cluster"
         if kmeans_model:
-            cluster_label = kmeans_model.predict(X_transformed)[0]
-            # Use cluster_names if available, else fallback to DEFAULT_CLUSTER_NAMES
-            cluster_name = getattr(kmeans_model, 'cluster_names', DEFAULT_CLUSTER_NAMES).get(cluster_label, f"Cluster {cluster_label}")
-            if hasattr(kmeans_model, 'get_cluster_examples'):
-                X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
-                if hasattr(X_train_transformed, 'toarray'):
-                    X_train_transformed = X_train_transformed.toarray()
-                cluster_examples = kmeans_model.get_cluster_examples(cluster_label, df, X_all=X_train_transformed, top_n=5)
+            cluster_num = kmeans_model.predict(X_transformed)[0]
+            
+            if hasattr(kmeans_model, 'cluster_names'):
+                cluster_name = kmeans_model.cluster_names.get(cluster_num, f"Cluster {cluster_num}")
             else:
-                # Fallback: Select top 5 laptops from the same cluster with improved formatting
-                X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
-                if hasattr(X_train_transformed, 'toarray'):
-                    X_train_transformed = X_train_transformed.toarray()
-                cluster_labels = kmeans_model.predict(X_train_transformed)
-                cluster_indices = np.where(cluster_labels == cluster_label)[0][:5]
-                for idx in cluster_indices:
-                    example = df.iloc[idx].to_dict()
-                    storage_parts = []
-                    if example.get('SSD', 0) > 0:
-                        storage_parts.append(f"{int(example['SSD'])}GB SSD")
-                    if example.get('HDD', 0) > 0:
-                        storage_parts.append(f"{int(example['HDD'])}GB HDD")
-                    storage = " + ".join(storage_parts) if storage_parts else "No storage info"
-                    features = []
-                    if example.get('Touchscreen', 0):
-                        features.append('Touchscreen')
-                    if example.get('Ips', 0):
-                        features.append('IPS Display')
-                    features_text = ', '.join(features) if features else 'Standard Features'
-                    cluster_examples.append({
-                        'Company': example.get('Company', 'Unknown'),
-                        'TypeName': example.get('TypeName', 'Laptop'),
-                        'Title': f"{example.get('Company', 'Unknown')} {example.get('TypeName', 'Laptop')}",
-                        'Ram': f"{int(example.get('Ram', 0))}GB",
-                        'Storage': storage,
-                        'Cpu_brand': example.get('Cpu brand', 'Unknown'),
-                        'Gpu_brand': example.get('Gpu brand', 'Unknown'),
-                        'Weight': f"{example.get('Weight', 0):.1f}kg" if example.get('Weight', 0) > 0 else "Weight N/A",
-                        'Price': f"RS {example.get('Price', 0):,.2f}",
-                        'Features': features_text,
-                        'Touchscreen': 'Yes' if example.get('Touchscreen', 0) else 'No',
-                        'Ips': 'Yes' if example.get('Ips', 0) else 'No',
-                        'os': example.get('os', 'Unknown OS')
-                    })
+                cluster_name = DEFAULT_CLUSTER_NAMES.get(cluster_num, f"Cluster {cluster_num}")
+            
+        # Enhanced clustering with dynamic naming
+        cluster_label = None
+        cluster_examples = []
+        cluster_name = "Unknown Cluster"
+        if kmeans_model:
+            cluster_num = kmeans_model.predict(X_transformed)[0]
+            
+            # Check if the model has the enhanced cluster_names attribute
+            if hasattr(kmeans_model, 'cluster_names') and kmeans_model.cluster_names:
+                cluster_name = kmeans_model.cluster_names.get(cluster_num, f"Cluster {cluster_num}")
+            else:
+                # Fallback to default names for older models
+                cluster_name = DEFAULT_CLUSTER_NAMES.get(cluster_num, f"Cluster {cluster_num}")
+            
+            # Try to get enhanced cluster examples
+            if hasattr(kmeans_model, 'get_cluster_examples'):
+                try:
+                    X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
+                    if hasattr(X_train_transformed, 'toarray'):
+                        X_train_transformed = X_train_transformed.toarray()
+                    cluster_examples = kmeans_model.get_cluster_examples(cluster_num, df, X_all=X_train_transformed, top_n=5)
+                except Exception as e:
+                    print(f"Enhanced cluster examples failed: {e}")
+                    cluster_examples = []
+            
+            # Fallback cluster examples if enhanced method fails or doesn't exist
+            if not cluster_examples:
+                try:
+                    X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
+                    if hasattr(X_train_transformed, 'toarray'):
+                        X_train_transformed = X_train_transformed.toarray()
+                    
+                    cluster_labels = kmeans_model.predict(X_train_transformed)
+                    cluster_indices = np.where(cluster_labels == cluster_num)[0]
+                    
+                    if len(cluster_indices) > 0:
+                        # Get diverse examples from the cluster
+                        cluster_df = df.iloc[cluster_indices].copy()
+                        
+                        # Simple diversity scoring
+                        cluster_df['score'] = (
+                            cluster_df['Ram'] * 0.3 +
+                            cluster_df.get('SSD', 0) * 0.0002 +
+                            np.random.normal(0, 1, len(cluster_df))  # Add randomness for variety
+                        )
+                        
+                        top_diverse = cluster_df.nlargest(min(5, len(cluster_df)), 'score')
+                        
+                        for _, example in top_diverse.iterrows():
+                            # Build storage info
+                            ssd_val = example.get('SSD', 0) if example.get('SSD', 0) not in [None, 'N/A', ''] else 0
+                            hdd_val = example.get('HDD', 0) if example.get('HDD', 0) not in [None, 'N/A', ''] else 0
+                            
+                            storage_parts = []
+                            if ssd_val > 0:
+                                storage_parts.append(f"{int(ssd_val)}GB SSD")
+                            if hdd_val > 0:
+                                storage_parts.append(f"{int(hdd_val)}GB HDD")
+                            storage = " + ".join(storage_parts) if storage_parts else "Storage info unavailable"
+                            
+                            # Build features
+                            features = []
+                            if example.get('Touchscreen', 0) == 1 or example.get('Touchscreen') == 'Yes':
+                                features.append('Touchscreen')
+                            if example.get('Ips', 0) == 1 or example.get('Ips') == 'Yes':
+                                features.append('IPS Display')
+                            
+                            ram_val = example.get('Ram', 0)
+                            if ram_val >= 16:
+                                features.append('High Memory')
+                            elif ram_val >= 8:
+                                features.append('Good Memory')
+                            
+                            features_text = ', '.join(features) if features else 'Standard Features'
+                            
+                            # Get CPU, GPU, OS with fallbacks
+                            cpu_brand = example.get('Cpu brand', example.get('CPU', example.get('Cpu_brand', 'Unknown CPU')))
+                            gpu_brand = example.get('Gpu brand', example.get('GPU', example.get('Gpu_brand', 'Unknown GPU')))
+                            os_info = example.get('os', example.get('OS', example.get('OpSys', 'Unknown OS')))
+                            
+                            cluster_examples.append({
+                                'Company': example.get('Company', 'Unknown'),
+                                'TypeName': example.get('TypeName', 'Laptop'),
+                                'Title': f"{example.get('Company', 'Unknown')} {example.get('TypeName', 'Laptop')}",
+                                'Ram': f"{int(ram_val)}GB" if ram_val else "N/A",
+                                'Storage': storage,
+                                'Cpu_brand': cpu_brand,
+                                'Gpu_brand': gpu_brand,
+                                'Weight': f"{example.get('Weight', 0):.1f}kg" if example.get('Weight', 0) > 0 else "Weight N/A",
+                                'Price': f"₹{example.get('Price', 0):,.2f}",
+                                'Features': features_text,
+                                'Touchscreen': 'Yes' if (example.get('Touchscreen', 0) == 1 or example.get('Touchscreen') == 'Yes') else 'No',
+                                'Ips': 'Yes' if (example.get('Ips', 0) == 1 or example.get('Ips') == 'Yes') else 'No',
+                                'os': os_info
+                            })
+                            
+                except Exception as e:
+                    print(f"Fallback cluster examples also failed: {e}")
+                    cluster_examples = []
 
         return render_template('index.html',
                                predicted_price=formatted_price,
@@ -332,53 +562,104 @@ def predict_history():
 
         # Price prediction using RandomForest
         prediction = rf_model.predict(X_transformed)
-        predicted_price = np.exp(prediction[0])  # Reverse log transformation
+        predicted_price = np.exp(prediction[0])
         formatted_price = f"₹{predicted_price:,.2f}"
 
-        # Recommendations using CustomKNN
+        # Enhanced recommendations with same logic as main predict
         recommendations = []
+        
         if knn_model and hasattr(knn_model, 'get_similar_laptops'):
-            recommendations = knn_model.get_similar_laptops(X_transformed, df, top_n=5)
-        else:
-            # Fallback: Manual KNN recommendation
+            try:
+                recommendations = knn_model.get_similar_laptops(X_transformed, df, top_n=5, price_range_factor=0.3)
+                for rec in recommendations:
+                    if 'similarity_score' not in rec:
+                        rec['similarity_score'] = rec.get('Similarity', 0.5)
+            except Exception as e:
+                print(f"Enhanced KNN failed in predict_history: {e}")
+                recommendations = []
+        
+        if not recommendations:
+            # Enhanced fallback with same improvements as main predict route
             distances = []
             X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
             if hasattr(X_train_transformed, 'toarray'):
                 X_train_transformed = X_train_transformed.toarray()
-            for i, sample in enumerate(X_train_transformed):
-                cosine_sim = knn_model._cosine_similarity(X_transformed[0], sample)
-                distances.append((cosine_sim, i))
-            top_indices = [idx for _, idx in sorted(distances, reverse=True)[:5]]
-            for i, idx in enumerate(top_indices):
+            
+            for sample_idx, sample in enumerate(X_train_transformed):
+                # Use basic cosine similarity
+                dot_product = np.dot(X_transformed[0], sample)
+                norm_a = np.linalg.norm(X_transformed[0])
+                norm_b = np.linalg.norm(sample)
+                
+                if norm_a > 0 and norm_b > 0:
+                    sim = dot_product / (norm_a * norm_b)
+                else:
+                    sim = 0
+                
+                # Price consideration
+                laptop_price = df.iloc[sample_idx]['Price']
+                price_factor = 1.3 if 0.7 * predicted_price <= laptop_price <= 1.3 * predicted_price else 1.0
+                distances.append((sim * price_factor, sample_idx))
+            
+            distances.sort(reverse=True)
+            seen_companies = set()
+            
+            for similarity_score, idx in distances:
+                if len(recommendations) >= 5:
+                    break
+                    
                 rec = df.iloc[idx].to_dict()
+                company = rec.get('Company', 'Unknown')
+                
+                if len([r for r in recommendations if r.get('Company') == company]) >= 2:
+                    continue
+                
+                seen_companies.add(company)
+                
+                # Better data extraction like in main predict route
+                ssd_val = rec.get('SSD', 0) if rec.get('SSD', 0) not in [None, 'N/A', ''] else 0
+                hdd_val = rec.get('HDD', 0) if rec.get('HDD', 0) not in [None, 'N/A', ''] else 0
+                
                 storage_parts = []
-                if rec.get('SSD', 0) > 0:
-                    storage_parts.append(f"{int(rec['SSD'])}GB SSD")
-                if rec.get('HDD', 0) > 0:
-                    storage_parts.append(f"{int(rec['HDD'])}GB HDD")
-                storage = " + ".join(storage_parts) if storage_parts else "No storage info"
-                features = []
-                if rec.get('Touchscreen', 0):
-                    features.append('Touchscreen')
-                if rec.get('Ips', 0):
-                    features.append('IPS Display')
-                features_text = ', '.join(features) if features else 'Standard Features'
+                if ssd_val > 0:
+                    storage_parts.append(f"{int(ssd_val)}GB SSD")
+                if hdd_val > 0:
+                    storage_parts.append(f"{int(hdd_val)}GB HDD")
+                storage = " + ".join(storage_parts) if storage_parts else "Storage info unavailable"
+                
+                # Handle CPU and GPU properly
+                cpu_brand = rec.get('Cpu brand', rec.get('CPU', rec.get('Cpu_brand', 'Unknown CPU')))
+                gpu_brand = rec.get('Gpu brand', rec.get('GPU', rec.get('Gpu_brand', 'Unknown GPU')))
+                os_info = rec.get('os', rec.get('OS', rec.get('OpSys', 'Unknown OS')))
+                
                 recommendations.append({
+                    'Title': f"{rec.get('Company', 'Unknown')} {rec.get('TypeName', 'Laptop')}",
                     'Company': rec.get('Company', 'Unknown'),
                     'TypeName': rec.get('TypeName', 'Laptop'),
-                    'Title': f"{rec.get('Company', 'Unknown')} {rec.get('TypeName', 'Laptop')}",
-                    'Ram': f"{int(rec.get('Ram', 0))}GB",
+                    'Ram': f"{int(rec.get('Ram', 0))}GB" if rec.get('Ram', 0) else "N/A",
                     'Storage': storage,
-                    'Cpu_brand': rec.get('Cpu brand', 'Unknown'),
-                    'Gpu_brand': rec.get('Gpu brand', 'Unknown'),
+                    'Cpu': cpu_brand,  # Template expects 'Cpu' not 'Cpu_brand'
+                    'Gpu': gpu_brand,  # Template expects 'Gpu' not 'Gpu_brand'
                     'Weight': f"{rec.get('Weight', 0):.1f}kg" if rec.get('Weight', 0) > 0 else "Weight N/A",
-                    'Price': f"₹{rec.get('Price', 0):,.2f}",
-                    'Similarity': f"{distances[i][0]:.2f}",
-                    'Features': features_text,
-                    'Touchscreen': 'Yes' if rec.get('Touchscreen', 0) else 'No',
-                    'Ips': 'Yes' if rec.get('Ips', 0) else 'No',
-                    'os': rec.get('os', 'Unknown OS')
+                    'Price': float(rec.get('Price', 0)),
+                    'similarity_score': float(similarity_score),  # This should fix the N/A issue
+                    'Features': 'Standard Features',
+                    'Touchscreen': 'Yes' if (rec.get('Touchscreen', 0) == 1 or rec.get('Touchscreen') == 'Yes') else 'No',
+                    'Ips': 'Yes' if (rec.get('Ips', 0) == 1 or rec.get('Ips') == 'Yes') else 'No',
+                    'OpSys': os_info,
+                    'Inches': screen_size,
+                    'resolution': resolution
                 })
+
+        # Clustering with backward compatibility
+        cluster_label = None
+        if kmeans_model:
+            cluster_num = kmeans_model.predict(X_transformed)[0]
+            # Check if model has enhanced cluster_names, otherwise use default
+            if hasattr(kmeans_model, 'cluster_names') and kmeans_model.cluster_names:
+                cluster_label = kmeans_model.cluster_names.get(cluster_num, f"Cluster {cluster_num}")
+            else:
+                cluster_label = DEFAULT_CLUSTER_NAMES.get(cluster_num, f"Cluster {cluster_num}")
 
         # Save prediction to database if user is logged in
         if 'user_id' in session:
@@ -402,36 +683,37 @@ def predict_history():
                             )
                         )
                         connection.commit()
-                        # Get the inserted prediction ID
-                        cursor.execute("SELECT LAST_INSERT_ID() AS pid")
-                        prediction_id = cursor.fetchone()[0]
+                        flash('Prediction saved successfully!', 'success')
                 except Exception as e:
                     print(f"Error saving prediction to database: {str(e)}")
-                    flash(f"Error saving prediction: {str(e)}", 'error')
+                    flash(f"Prediction completed but couldn't save to history: {str(e)}", 'warning')
                 finally:
                     close_connection(connection)
 
             # Save recommendations to database
-            if recommendations and 'user_id' in session:
+            if recommendations:
                 connection = create_connection()
                 if connection:
                     try:
                         with connection.cursor() as cursor:
                             for rec in recommendations:
-                                specs = f"RAM: {rec['Ram']}, Storage: {rec['Storage']}, CPU: {rec['Cpu_brand']}, GPU: {rec['Gpu_brand']}, Features: {rec['Features']}, OS: {rec['os']}"
-                                price = float(rec['Price'].replace('₹', '').replace(',', ''))
-                                similarity_score = float(rec['Similarity'])
+                                specs = f"RAM: {rec.get('Ram', 'N/A')}, Storage: {rec.get('Storage', 'N/A')}, CPU: {rec.get('Cpu', 'N/A')}, GPU: {rec.get('Gpu', 'N/A')}"
+                                similarity_score = rec.get('similarity_score', 0.5)
+                                if isinstance(similarity_score, (int, float)):
+                                    similarity_score = float(similarity_score)
+                                else:
+                                    similarity_score = 0.5
+                                    
                                 cursor.execute(
                                     """
                                     INSERT INTO recommendations (uid, laptop_name, specs, price, similarity_score)
                                     VALUES (%s, %s, %s, %s, %s)
                                     """,
-                                    (session['user_id'], rec['Title'], specs, price, similarity_score)
+                                    (session['user_id'], rec['Title'], specs, rec['Price'], similarity_score)
                                 )
                             connection.commit()
                     except Exception as e:
                         print(f"Error saving recommendations to database: {str(e)}")
-                        flash(f"Error saving recommendations: {str(e)}", 'error')
                     finally:
                         close_connection(connection)
 
@@ -451,175 +733,18 @@ def predict_history():
                 finally:
                     close_connection(connection)
 
-        return render_template('predict.html', 
-                               predicted_price=formatted_price,
-                               recommendations=recommendations,
-                               username=username,
-                               form_data=form_data,
-                               companies=companies,
-                               types=types,
-                               cpus=cpus,
-                               gpus=gpus,
-                               oss=oss)
+        return render_template('prediction.html',
+                              predicted_price=formatted_price,
+                              recommendations=recommendations,
+                              username=username,
+                              form_data=form_data,
+                              cluster_label=cluster_label)
 
     except Exception as e:
-        error_msg = f"Prediction or clustering failed: {str(e)}"
+        error_msg = f"Prediction failed: {str(e)}"
         print(error_msg)
         flash(error_msg, 'error')
         return redirect(url_for('prediction_history'))
-
-@app.route('/recommend', methods=['POST'])
-def recommend():
-    if 'user_id' not in session:
-        flash('Please login to get recommendations', 'warning')
-        return redirect(url_for('login'))
-
-    try:
-        # Get user preferences from form
-        budget = float(request.form.get('budget', 50000))
-        min_ram = int(request.form.get('min_ram', 8))
-        min_ssd = int(request.form.get('min_ssd', 256))
-        preferred_brands = request.form.getlist('preferred_brands')
-        preferred_cpu = request.form.get('preferred_cpu', '')
-
-        # Filter the dataset based on preferences
-        filtered_df = df.copy()
-        filtered_df = filtered_df[filtered_df['Price'] <= budget]
-        filtered_df = filtered_df[filtered_df['Ram'] >= min_ram]
-        filtered_df = filtered_df[filtered_df['SSD'] >= min_ssd]
-
-        if preferred_brands:
-            filtered_df = filtered_df[filtered_df['Company'].isin(preferred_brands)]
-        if preferred_cpu:
-            filtered_df = filtered_df[filtered_df['Cpu brand'] == preferred_cpu]
-
-        # If no results, relax filters
-        if len(filtered_df) == 0:
-            flash('No exact matches found. Showing closest options.', 'info')
-            filtered_df = df.copy()
-            filtered_df = filtered_df[filtered_df['Price'] <= budget * 1.2]
-            filtered_df = filtered_df[filtered_df['Ram'] >= max(4, min_ram - 4)]
-
-        # Use KMeans clustering for recommendations
-        recommendations = []
-        if kmeans_model and len(filtered_df) > 5:
-            try:
-                X_filtered = preprocessor.transform(filtered_df.drop(columns=['Price']))
-                if hasattr(X_filtered, 'toarray'):
-                    X_filtered = X_filtered.toarray()
-                clusters = kmeans_model.predict(X_filtered)
-                filtered_df['cluster'] = clusters
-
-                # Get top laptops from each cluster
-                for cluster_id in np.unique(clusters):
-                    if hasattr(kmeans_model, 'get_cluster_examples'):
-                        cluster_examples = kmeans_model.get_cluster_examples(cluster_id, filtered_df, X_filtered, top_n=1)
-                    else:
-                        # Fallback: Select top laptop from cluster with improved formatting
-                        cluster_indices = filtered_df[filtered_df['cluster'] == cluster_id].index[:1]
-                        cluster_examples = []
-                        for idx in cluster_indices:
-                            example = filtered_df.loc[idx].to_dict()
-                            storage_parts = []
-                            if example.get('SSD', 0) > 0:
-                                storage_parts.append(f"{int(example['SSD'])}GB SSD")
-                            if example.get('HDD', 0) > 0:
-                                storage_parts.append(f"{int(example['HDD'])}GB HDD")
-                            storage = " + ".join(storage_parts) if storage_parts else "No storage info"
-                            features = []
-                            if example.get('Touchscreen', 0):
-                                features.append('Touchscreen')
-                            if example.get('Ips', 0):
-                                features.append('IPS Display')
-                            features_text = ', '.join(features) if features else 'Standard Features'
-                            cluster_examples.append({
-                                'Company': example.get('Company', 'Unknown'),
-                                'TypeName': example.get('TypeName', 'Laptop'),
-                                'Title': f"{example.get('Company', 'Unknown')} {example.get('TypeName', 'Laptop')}",
-                                'Ram': f"{int(example.get('Ram', 0))}GB",
-                                'Storage': storage,
-                                'Cpu_brand': example.get('Cpu brand', 'Unknown'),
-                                'Gpu_brand': example.get('Gpu brand', 'Unknown'),
-                                'Weight': f"{example.get('Weight', 0):.1f}kg" if example.get('Weight', 0) > 0 else "Weight N/A",
-                                'Price': f"RS {example.get('Price', 0):,.2f}",
-                                'Features': features_text,
-                                'Touchscreen': 'Yes' if example.get('Touchscreen', 0) else 'No',
-                                'Ips': 'Yes' if example.get('Ips', 0) else 'No',
-                                'os': example.get('os', 'Unknown OS')
-                            })
-                    recommendations.extend(cluster_examples)
-                recommendations = recommendations[:5]  # Limit to 5
-            except Exception as e:
-                print(f"Clustering error: {str(e)}")
-                recommendations = []
-                for _, row in filtered_df.nlargest(5, 'Ram').iterrows():
-                    example = row.to_dict()
-                    storage_parts = []
-                    if example.get('SSD', 0) > 0:
-                        storage_parts.append(f"{int(example['SSD'])}GB SSD")
-                    if example.get('HDD', 0) > 0:
-                        storage_parts.append(f"{int(example['HDD'])}GB HDD")
-                    storage = " + ".join(storage_parts) if storage_parts else "No storage info"
-                    features = []
-                    if example.get('Touchscreen', 0):
-                        features.append('Touchscreen')
-                    if example.get('Ips', 0):
-                        features.append('IPS Display')
-                    features_text = ', '.join(features) if features else 'Standard Features'
-                    recommendations.append({
-                        'Company': example.get('Company', 'Unknown'),
-                        'TypeName': example.get('TypeName', 'Laptop'),
-                        'Title': f"{example.get('Company', 'Unknown')} {example.get('TypeName', 'Laptop')}",
-                        'Ram': f"{int(example.get('Ram', 0))}GB",
-                        'Storage': storage,
-                        'Cpu_brand': example.get('Cpu brand', 'Unknown'),
-                        'Gpu_brand': example.get('Gpu brand', 'Unknown'),
-                        'Weight': f"{example.get('Weight', 0):.1f}kg" if example.get('Weight', 0) > 0 else "Weight N/A",
-                        'Price': f"RS {example.get('Price', 0):,.2f}",
-                        'Features': features_text,
-                        'Touchscreen': 'Yes' if example.get('Touchscreen', 0) else 'No',
-                        'Ips': 'Yes' if example.get('Ips', 0) else 'No',
-                        'os': example.get('os', 'Unknown OS')
-                    })
-        else:
-            recommendations = []
-            for _, row in filtered_df.nlargest(5, 'Ram').iterrows():
-                example = row.to_dict()
-                storage_parts = []
-                if example.get('SSD', 0) > 0:
-                    storage_parts.append(f"{int(example['SSD'])}GB SSD")
-                if example.get('HDD', 0) > 0:
-                    storage_parts.append(f"{int(example['HDD'])}GB HDD")
-                storage = " + ".join(storage_parts) if storage_parts else "No storage info"
-                features = []
-                if example.get('Touchscreen', 0):
-                    features.append('Touchscreen')
-                if example.get('Ips', 0):
-                    features.append('IPS Display')
-                features_text = ', '.join(features) if features else 'Standard Features'
-                recommendations.append({
-                    'Company': example.get('Company', 'Unknown'),
-                    'TypeName': example.get('TypeName', 'Laptop'),
-                    'Title': f"{example.get('Company', 'Unknown')} {example.get('TypeName', 'Laptop')}",
-                    'Ram': f"{int(example.get('Ram', 0))}GB",
-                    'Storage': storage,
-                    'Cpu_brand': example.get('Cpu brand', 'Unknown'),
-                    'Gpu_brand': example.get('Gpu brand', 'Unknown'),
-                    'Weight': f"{example.get('Weight', 0):.1f}kg" if example.get('Weight', 0) > 0 else "Weight N/A",
-                    'Price': f"RS {example.get('Price', 0):,.2f}",
-                    'Features': features_text,
-                    'Touchscreen': 'Yes' if example.get('Touchscreen', 0) else 'No',
-                    'Ips': 'Yes' if example.get('Ips', 0) else 'No',
-                    'os': example.get('os', 'Unknown OS')
-                })
-
-        return render_template('recommendations.html',
-                              recommendations=recommendations,
-                              budget=f"RS {budget:,.2f}")
-
-    except Exception as e:
-        flash(f"Error generating recommendations: {str(e)}", 'error')
-        return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -694,40 +819,31 @@ def admin_login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    print("Accessing /signup route [GET or POST]")
     errors = {}
     form_data = {}
     success = False
 
     if request.method == 'POST':
-        print("Received POST request for signup")
         try:
             form_data['username'] = request.form.get('username', '')
             form_data['email'] = request.form.get('email', '')
             form_data['password'] = request.form.get('password', '')
             form_data['confirmPassword'] = request.form.get('confirmPassword', '')
-            print(f"Form data received: {request.form}")
 
             if not form_data['username'] or len(form_data['username']) < 8 or not re.match(r'^[A-Za-z][A-Za-z0-9]{7,19}$', form_data['username']):
-                print("Username validation failed")
                 errors['username'] = 'Username must be valid and at least 8 characters long'
             if not form_data['email'] or not re.match(r'^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', form_data['email']):
-                print("Email validation failed")
                 errors['email'] = 'Invalid email address'
             if not form_data['password'] or len(form_data['password']) < 5 or not re.match(r'^[a-zA-Z0-9]{5,20}$', form_data['password']):
-                print("Password validation failed")
                 errors['password'] = 'Password must be at least 5 characters long'
             if not form_data['confirmPassword'] or form_data['password'] != form_data['confirmPassword']:
-                print("Password mismatch")
                 errors['confirmPassword'] = 'Passwords do not match'
 
             if errors:
-                print("Validation errors detected, rendering signup.html")
                 return render_template('signup.html', errors=errors, form_data=form_data, success=False)
 
             connection = create_connection()
             if not connection:
-                print("Database connection failed")
                 errors['general'] = 'Database connection error'
                 return render_template('signup.html', errors=errors, form_data=form_data, success=False)
 
@@ -735,7 +851,6 @@ def signup():
                 cursor = connection.cursor()
                 cursor.execute("SELECT uid FROM users WHERE username = %s OR email = %s", (form_data['username'], form_data['email']))
                 if cursor.fetchone():
-                    print("Duplicate username or email found")
                     errors['general'] = 'Username or email already exists'
                     return render_template('signup.html', errors=errors, form_data=form_data, success=False)
 
@@ -745,22 +860,18 @@ def signup():
                     (form_data['username'], form_data['email'], hashed_password)
                 )
                 connection.commit()
-                print("User inserted successfully")
                 flash('You have successfully signed up! Please log in.', 'success')
                 return render_template('signup.html', errors={}, form_data={}, success=True)
             except Exception as db_error:
-                print(f"Database error: {str(db_error)}")
                 errors['general'] = f'Database error: {str(db_error)}'
                 return render_template('signup.html', errors=errors, form_data=form_data, success=False)
             finally:
                 cursor.close()
                 close_connection(connection)
         except Exception as e:
-            print(f"Signup error: {str(e)}")
             errors['general'] = f'Error during signup: {str(e)}'
             return render_template('signup.html', errors=errors, form_data=form_data, success=False)
 
-    print("Rendering signup.html for GET request")
     return render_template('signup.html', errors={}, form_data={}, success=False)
 
 @app.route('/dashboard', methods=['GET', 'POST'])
@@ -776,10 +887,13 @@ def dashboard():
         'saved_recommendations': 0,
         'total_bookings': 0
     }
+    recent_predictions = []
+    recent_recommendations = []
 
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
+            
             cursor.execute("SELECT COUNT(*) as count FROM predictions WHERE uid = %s", (session['user_id'],))
             result = cursor.fetchone()
             user_stats['total_predictions'] = result['count'] if result else 0
@@ -796,6 +910,27 @@ def dashboard():
             book_result = cursor.fetchone()
             user_stats['total_bookings'] = book_result['count'] if book_result else 0
 
+            cursor.execute("""
+                SELECT pid, created_at, predicted_price,
+                       CONCAT(COALESCE(company, 'Unknown'), ', ',
+                              COALESCE(cpu, 'Unknown'), ', ',
+                              COALESCE(ram, 0), 'GB RAM') AS laptop_specs
+                FROM predictions
+                WHERE uid = %s
+                ORDER BY created_at DESC
+                LIMIT 5
+            """, (session['user_id'],))
+            recent_predictions = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT laptop_name, price, similarity_score, saved_at
+                FROM recommendations
+                WHERE uid = %s
+                ORDER BY saved_at DESC
+                LIMIT 3
+            """, (session['user_id'],))
+            recent_recommendations = cursor.fetchall()
+
             cursor.close()
         except Exception as e:
             flash(f"An error occurred: {e}", 'error')
@@ -809,6 +944,8 @@ def dashboard():
                            gpus=gpus,
                            oss=oss,
                            user_stats=user_stats,
+                           recent_predictions=recent_predictions,
+                           recent_recommendations=recent_recommendations,
                            model_loaded=(preprocessor is not None and rf_model is not None and kmeans_model is not None))
 
 @app.route('/admindashboard')
@@ -823,142 +960,27 @@ def admindashboard():
 
     if connection:
         try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM users")
+            with connection.cursor(dictionary=True) as cursor:
+                cursor.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 10")
                 users = cursor.fetchall()
-                cursor.execute("SELECT * FROM predictions")
+                cursor.execute("SELECT * FROM predictions ORDER BY created_at DESC LIMIT 10")
                 predictions = cursor.fetchall()
         except Exception as e:
-            print(f"Database error in admindashboard: {str(e)}")
             flash(f"An error occurred: {e}", 'error')
         finally:
             close_connection(connection)
 
     return render_template('admindashboard.html', users=users, predictions=predictions)
 
-@app.route('/userlist')
-def user_list():
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    users = []
-
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM users")
-                users = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('user_list.html', users=users)
-
-@app.route('/userprediction')
-def user_prediction():
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    predictions = []
-
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM predictions ORDER BY created_at DESC")
-                predictions = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('user_prediction.html', predictions=predictions)
-
-@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
-def edit_user(user_id):
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    errors = {}
-    user = None
-
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                if request.method == 'POST':
-                    username = request.form['username']
-                    email = request.form['email']
-                    password = request.form['password']
-                    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-
-                    cursor.execute("SELECT uid FROM users WHERE (username = %s OR email = %s) AND uid != %s", (username, email, user_id))
-                    conflict = cursor.fetchone()
-
-                    if conflict:
-                        errors['conflict'] = "Username or email already exists."
-                        cursor.execute("SELECT * FROM users WHERE uid=%s", (user_id,))
-                        user = cursor.fetchone()
-                        return render_template('edit_user.html', user=user, errors=errors)
-
-                    cursor.execute("UPDATE users SET username=%s, email=%s, password=%s WHERE uid=%s",
-                                   (username, email, hashed_password, user_id))
-                    connection.commit()
-                    flash('User updated successfully', 'success')
-                    return redirect(url_for('index'))
-
-                cursor.execute("SELECT * FROM users WHERE uid=%s", (user_id,))
-                user = cursor.fetchone()
-
-                if not user:
-                    flash('User not found', 'error')
-                    return redirect(url_for('index'))
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('edit_user.html', user=user, errors=errors)
-
-@app.route('/delete_user/<int:user_id>', methods=['GET'])
-def delete_user(user_id):
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("DELETE FROM predictions WHERE uid=%s", (user_id,))
-                cursor.execute("DELETE FROM users WHERE uid=%s", (user_id,))
-                connection.commit()
-                flash('User and associated data deleted successfully', 'success')
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return redirect(url_for('index'))
-
 @app.route('/prediction_history')
 def prediction_history():
     if 'user_id' not in session:
-        print("No user_id in session, redirecting to login")
         flash('Please log in to view your prediction history.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    print(f"Accessing /prediction_history route for user_id: {user_id}")
-
     connection = create_connection()
     if not connection:
-        print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('dashboard'))
 
@@ -967,13 +989,11 @@ def prediction_history():
         cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
         user = cursor.fetchone()
         if not user:
-            print(f"No user found for user_id: {user_id}")
             flash('User not found. Please log in again.', 'error')
             session.pop('user_id', None)
             return redirect(url_for('login'))
 
         username = user['username']
-        print(f"Username fetched: {username}")
 
         cursor.execute("""
             SELECT pid, created_at, predicted_price,
@@ -986,13 +1006,25 @@ def prediction_history():
             ORDER BY created_at DESC
         """, (user_id,))
         predictions = cursor.fetchall()
-        print(f"Fetched {len(predictions)} predictions for user_id {user_id}")
 
-        return render_template('predictionhistory.html', predictions=predictions, username=username, companies=companies, types=types, cpus=cpus, gpus=gpus, oss=oss)
+        return render_template('predictionhistory.html', 
+                             predictions=predictions, 
+                             username=username, 
+                             companies=companies, 
+                             types=types, 
+                             cpus=cpus, 
+                             gpus=gpus, 
+                             oss=oss)
     except Exception as e:
-        print(f"Error fetching predictions for user_id {user_id}: {str(e)}")
         flash(f"Error fetching predictions: {str(e)}", 'error')
-        return render_template('predictionhistory.html', predictions=[], username='User', companies=companies, types=types, cpus=cpus, gpus=gpus, oss=oss)
+        return render_template('predictionhistory.html', 
+                             predictions=[], 
+                             username='User', 
+                             companies=companies, 
+                             types=types, 
+                             cpus=cpus, 
+                             gpus=gpus, 
+                             oss=oss)
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1020,14 +1052,13 @@ def view_prediction(pid):
             flash('Prediction not found or you do not have permission to view it.', 'error')
             return redirect(url_for('prediction_history'))
 
-        # Prepare form_data to match predict.html
         form_data = {
             'company': prediction['company'],
             'type': prediction['type'],
             'ram': prediction['ram'],
             'weight': prediction['weight'],
-            'touchscreen': prediction['touchscreen'],
-            'ips': prediction['ips'],
+            'touchscreen': 'Yes' if prediction['touchscreen'] == 1 else 'No',
+            'ips': 'Yes' if prediction['ips'] == 1 else 'No',
             'screen_size': prediction['screen_size'],
             'resolution': prediction['resolution'],
             'cpu': prediction['cpu'],
@@ -1037,81 +1068,124 @@ def view_prediction(pid):
             'os': prediction['os']
         }
 
-        # Fetch recommendations (adjust query to match your recommendation logic)
         cursor.execute("""
-            SELECT laptop_name AS Product, specs, price AS Price, similarity_score
+            SELECT laptop_name, specs, price, similarity_score
             FROM recommendations
-            WHERE uid = %s AND saved_at = %s
-            ORDER BY similarity_score DESC
+            WHERE uid = %s
+            ORDER BY saved_at DESC
             LIMIT 5
-        """, (user_id, prediction['created_at']))
-        recommendations = cursor.fetchall()
+        """, (user_id,))
+        recommendations_raw = cursor.fetchall()
 
-        # Transform recommendations to match expected format
-        for rec in recommendations:
-            # Parse specs string to extract fields (this is a simple heuristic; adjust as needed)
-            specs = rec['specs']
-            rec['Company'] = specs.split(' ')[0]
-            rec['TypeName'] = specs.split(' ')[1]
-            rec['Ram'] = specs.split('RAM')[0].split()[-2] + ' GB'
-            rec['Cpu'] = ' '.join(specs.split('CPU')[0].split()[-2:])
-            rec['HDD'] = specs.split('HDD')[0].split()[-2] + ' GB'
-            rec['SSD'] = specs.split('SSD')[0].split()[-2] + ' GB'
-            rec['Gpu'] = ' '.join(specs.split('GPU')[0].split()[-2:])
-            rec['OpSys'] = specs.split('OS')[0].split()[-1]
-            rec['Inches'] = specs.split('inches')[0].split()[-2]
-            rec['resolution'] = specs.split('resolution')[0].split()[-1]
+        recommendations = []
+        for rec in recommendations_raw:
+            try:
+                specs = rec['specs'] or ""
+                company = "Unknown"
+                ram = "N/A"
+                cpu = "Unknown"
+                gpu = "Unknown"
+                storage = "N/A"
+                
+                if "RAM:" in specs:
+                    try:
+                        ram = specs.split("RAM:")[1].split(",")[0].strip()
+                    except:
+                        ram = "N/A"
+                
+                if "CPU:" in specs:
+                    try:
+                        cpu = specs.split("CPU:")[1].split(",")[0].strip()
+                    except:
+                        cpu = "Unknown"
+                
+                if "GPU:" in specs:
+                    try:
+                        gpu = specs.split("GPU:")[1].split(",")[0].strip()
+                    except:
+                        gpu = "Unknown"
+                
+                if "Storage:" in specs:
+                    try:
+                        storage = specs.split("Storage:")[1].split(",")[0].strip()
+                    except:
+                        storage = "N/A"
+
+                recommendations.append({
+                    'Title': rec['laptop_name'],
+                    'Company': company,
+                    'TypeName': "Laptop",
+                    'Ram': ram,
+                    'Storage': storage,
+                    'Cpu': cpu,
+                    'Gpu': gpu,
+                    'Weight': "N/A",
+                    'Price': float(rec['price']) if rec['price'] else 0,
+                    'similarity_score': float(rec['similarity_score']) if rec['similarity_score'] else 0,
+                    'OpSys': "Unknown",
+                    'Inches': form_data['screen_size'],
+                    'resolution': form_data['resolution'],
+                    'Features': "Standard Features"
+                })
+            except Exception as e:
+                recommendations.append({
+                    'Title': rec['laptop_name'],
+                    'Company': "Unknown",
+                    'TypeName': "Laptop",
+                    'Ram': "N/A",
+                    'Storage': "N/A",
+                    'Cpu': "Unknown",
+                    'Gpu': "Unknown",
+                    'Weight': "N/A",
+                    'Price': float(rec['price']) if rec['price'] else 0,
+                    'similarity_score': float(rec['similarity_score']) if rec['similarity_score'] else 0,
+                    'OpSys': "Unknown",
+                    'Inches': form_data['screen_size'],
+                    'resolution': form_data['resolution'],
+                    'Features': "Standard Features"
+                })
 
         cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
         user = cursor.fetchone()
         username = user['username'] if user else 'User'
 
-        return render_template('predict.html',
+        return render_template('prediction.html',
                                predicted_price=f"₹{prediction['predicted_price']:,.2f}",
                                recommendations=recommendations,
                                username=username,
                                form_data=form_data,
-                               companies=companies,
-                               types=types,
-                               cpus=cpus,
-                               gpus=gpus,
-                               oss=oss)
+                               cluster_label=None)
     except Exception as e:
         flash(f"Error fetching prediction page: {str(e)}", 'error')
         return redirect(url_for('prediction_history'))
     finally:
-        cursor.close()
-        close_connection(connection)    
+        if 'cursor' in locals():
+            cursor.close()
+        close_connection(connection)
 
 @app.route('/delete_prediction/<int:pid>', methods=['POST'])
 def delete_prediction(pid):
     if 'user_id' not in session:
-        print("No user_id in session, redirecting to login")
         flash('Please log in to delete predictions.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
     connection = create_connection()
     if not connection:
-        print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('prediction_history'))
 
     try:
         with connection.cursor() as cursor:
-            # Verify the prediction belongs to the user
             cursor.execute("SELECT pid FROM predictions WHERE pid = %s AND uid = %s", (pid, user_id))
             if not cursor.fetchone():
-                print(f"Prediction {pid} not found or not owned by user {user_id}")
                 flash('Prediction not found or you do not have permission to delete it.', 'error')
                 return redirect(url_for('prediction_history'))
 
             cursor.execute("DELETE FROM predictions WHERE pid = %s", (pid,))
             connection.commit()
-            print(f"Prediction {pid} deleted successfully")
             flash('Prediction deleted successfully.', 'success')
     except Exception as e:
-        print(f"Error deleting prediction {pid}: {str(e)}")
         flash(f"Error deleting prediction: {str(e)}", 'error')
     finally:
         close_connection(connection)
@@ -1121,16 +1195,12 @@ def delete_prediction(pid):
 @app.route('/recommendation_history')
 def recommendation_history():
     if 'user_id' not in session:
-        print("No user_id in session, redirecting to login")
         flash('Please log in to view your recommendation history.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    print(f"Accessing /recommendation_history route for user_id: {user_id}")
-
     connection = create_connection()
     if not connection:
-        print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('dashboard'))
 
@@ -1139,13 +1209,11 @@ def recommendation_history():
         cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
         user = cursor.fetchone()
         if not user:
-            print(f"No user found for user_id: {user_id}")
             flash('User not found. Please log in again.', 'error')
             session.pop('user_id', None)
             return redirect(url_for('login'))
 
         username = user['username']
-        print(f"Username fetched: {username}")
 
         cursor.execute("""
             SELECT rid, laptop_name, specs, price, similarity_score, saved_at
@@ -1154,11 +1222,9 @@ def recommendation_history():
             ORDER BY saved_at DESC
         """, (user_id,))
         recommendations = cursor.fetchall()
-        print(f"Fetched {len(recommendations)} recommendations for user_id {user_id}")
 
         return render_template('recommendationhistory.html', recommendations=recommendations, username=username)
     except Exception as e:
-        print(f"Error fetching recommendations for user_id {user_id}: {str(e)}")
         flash(f"Error fetching recommendations: {str(e)}", 'error')
         return render_template('recommendationhistory.html', recommendations=[], username='User')
     finally:
@@ -1169,32 +1235,26 @@ def recommendation_history():
 @app.route('/delete_recommendation/<int:rid>', methods=['POST'])
 def delete_recommendation(rid):
     if 'user_id' not in session:
-        print("No user_id in session, redirecting to login")
         flash('Please log in to delete recommendations.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
     connection = create_connection()
     if not connection:
-        print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('recommendation_history'))
 
     try:
         with connection.cursor() as cursor:
-            # Verify the recommendation belongs to the user
             cursor.execute("SELECT rid FROM recommendations WHERE rid = %s AND uid = %s", (rid, user_id))
             if not cursor.fetchone():
-                print(f"Recommendation {rid} not found or not owned by user {user_id}")
                 flash('Recommendation not found or you do not have permission to delete it.', 'error')
                 return redirect(url_for('recommendation_history'))
 
             cursor.execute("DELETE FROM recommendations WHERE rid = %s", (rid,))
             connection.commit()
-            print(f"Recommendation {rid} deleted successfully")
             flash('Recommendation deleted successfully.', 'success')
     except Exception as e:
-        print(f"Error deleting recommendation {rid}: {str(e)}")
         flash(f"Error deleting recommendation: {str(e)}", 'error')
     finally:
         close_connection(connection)
@@ -1204,16 +1264,12 @@ def delete_recommendation(rid):
 @app.route('/booking_history')
 def booking_history():
     if 'user_id' not in session:
-        print("No user_id in session, redirecting to login")
         flash('Please log in to view your booking history.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    print(f"Accessing /booking_history route for user_id: {user_id}")
-
     connection = create_connection()
     if not connection:
-        print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('dashboard'))
 
@@ -1222,13 +1278,11 @@ def booking_history():
         cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
         user = cursor.fetchone()
         if not user:
-            print(f"No user found for user_id: {user_id}")
             flash('User not found. Please log in again.', 'error')
             session.pop('user_id', None)
             return redirect(url_for('login'))
 
         username = user['username']
-        print(f"Username fetched: {username}")
 
         cursor.execute("""
             SELECT bid, laptop_name, specs, price, booking_date
@@ -1237,11 +1291,9 @@ def booking_history():
             ORDER BY booking_date DESC
         """, (user_id,))
         bookings = cursor.fetchall()
-        print(f"Fetched {len(bookings)} bookings for user_id {user_id}")
 
         return render_template('bookinghistory.html', bookings=bookings, username=username)
     except Exception as e:
-        print(f"Error fetching bookings for user_id {user_id}: {str(e)}")
         flash(f"Error fetching bookings: {str(e)}", 'error')
         return render_template('bookinghistory.html', bookings=[], username='User')
     finally:

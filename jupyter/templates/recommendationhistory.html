@@ -40,103 +40,292 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
       }
-      .recommendation-card {
+
+      /* List View Styles */
+      .recommendations-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e3e6f0;
+      }
+
+      .recommendations-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border-radius: 15px;
         padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      .recommendation-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-      }
-      .recommendation-header {
+        font-weight: 600;
+        font-size: 1.1rem;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        gap: 10px;
       }
+
+      .recommendations-header i {
+        font-size: 1.3rem;
+      }
+
+      .recommendations-table-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 15px 20px;
+        font-weight: 600;
+        display: grid;
+        grid-template-columns: 2fr 1.2fr 0.8fr 1fr auto;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .recommendation-item {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr 0.8fr 1fr auto;
+        gap: 20px;
+        padding: 20px;
+        border-bottom: 1px solid #e3e6f0;
+        align-items: center;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .recommendation-item:hover {
+        background-color: #f8f9fc;
+        transform: translateX(5px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .recommendation-item:last-child {
+        border-bottom: none;
+      }
+
+      .laptop-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
       .laptop-name {
-        font-size: 1.4rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        margin: 0;
+        line-height: 1.3;
+      }
+
+      .laptop-specs {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .price-info {
+        text-align: center;
+      }
+
+      .price-value {
         font-weight: bold;
+        color: #e74c3c;
+        font-size: 1.2rem;
         margin: 0;
       }
+
+      .price-currency {
+        font-size: 0.9rem;
+        color: #6c757d;
+      }
+
+      .similarity-info {
+        text-align: center;
+      }
+
       .similarity-badge {
-        background-color: rgba(255, 255, 255, 0.2);
-        padding: 5px 12px;
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        color: white;
+        padding: 8px 12px;
         border-radius: 20px;
         font-size: 0.9rem;
-        backdrop-filter: blur(10px);
+        font-weight: 600;
+        display: inline-block;
+        min-width: 65px;
+        box-shadow: 0 2px 8px rgba(28, 200, 138, 0.3);
       }
-      .specs-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 15px;
+
+      .date-info {
+        text-align: center;
+        color: #6c757d;
       }
-      .spec-item {
-        background-color: rgba(255, 255, 255, 0.1);
-        padding: 10px;
-        border-radius: 8px;
-        backdrop-filter: blur(5px);
-      }
-      .spec-label {
+
+      .date-label {
         font-size: 0.8rem;
-        opacity: 0.8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        color: #858796;
+        margin-bottom: 2px;
       }
-      .spec-value {
-        font-size: 1.1rem;
-        font-weight: 500;
-        margin-top: 2px;
-      }
-      .price-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 15px;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .price-value {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #ffd700;
-      }
-      .saved-date {
+
+      .date-value {
         font-size: 0.9rem;
-        opacity: 0.7;
+        font-weight: 500;
       }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+
       .delete-btn {
-        background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
         border: none;
         color: white;
-        padding: 8px 15px;
-        border-radius: 20px;
+        padding: 8px 12px;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
         font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
       }
+
       .delete-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(238, 90, 82, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        background: linear-gradient(45deg, #c0392b, #a93226);
       }
+
       .empty-state {
         text-align: center;
-        padding: 60px 20px;
+        padding: 80px 20px;
         color: #6c757d;
       }
+
       .empty-state i {
-        font-size: 4rem;
+        font-size: 5rem;
         margin-bottom: 20px;
         opacity: 0.3;
+        color: #4e73df;
       }
+
       .empty-state h3 {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         color: #495057;
+        font-size: 1.5rem;
+      }
+
+      .empty-state p {
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+      }
+
+      .empty-state .btn {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        border: none;
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+
+      /* Stats Header */
+      .stats-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.2);
+      }
+
+      .stats-item {
+        text-align: center;
+      }
+
+      .stats-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+        display: block;
+      }
+
+      .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 992px) {
+        .recommendations-table-header,
+        .recommendation-item {
+          grid-template-columns: 1fr;
+          gap: 15px;
+          text-align: left;
+        }
+
+        .recommendations-table-header {
+          display: none;
+        }
+
+        .recommendation-item {
+          padding: 20px;
+          border-left: 4px solid #4e73df;
+        }
+
+        .laptop-info {
+          order: 1;
+        }
+
+        .price-info,
+        .similarity-info,
+        .date-info {
+          text-align: left;
+        }
+
+        .similarity-badge {
+          display: inline-block;
+          margin-right: 10px;
+        }
+
+        .action-buttons {
+          justify-content: flex-start;
+          margin-top: 10px;
+        }
+
+        /* Mobile labels */
+        .price-info::before {
+          content: "Price: ";
+          font-weight: 600;
+          color: #495057;
+        }
+
+        .similarity-info::before {
+          content: "Match: ";
+          font-weight: 600;
+          color: #495057;
+          display: block;
+          margin-bottom: 5px;
+        }
+
+        .date-info::before {
+          content: "Saved: ";
+          font-weight: 600;
+          color: #495057;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .stats-header {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .stats-header > div {
+          display: flex;
+          gap: 30px;
+        }
       }
     </style>
   </head>
@@ -296,57 +485,109 @@
 
             <!-- Recommendations -->
             {% if recommendations %}
-            <div class="row">
+
+            <!-- Stats Header -->
+            <div class="stats-header">
+              <div class="stats-item">
+                <span class="stats-number">{{ recommendations|length }}</span>
+                <span class="stats-label">Total Recommendations</span>
+              </div>
+              <div class="stats-item">
+                <span class="stats-number"
+                  >{{ "%.0f" |
+                  format((recommendations|map(attribute='similarity_score')|sum
+                  / recommendations|length) * 100) }}%</span
+                >
+                <span class="stats-label">Average Match</span>
+              </div>
+              <div class="stats-item">
+                <span class="stats-number"
+                  >₹{{ "%.0f" |
+                  format(recommendations|map(attribute='price')|min) }}</span
+                >
+                <span class="stats-label">Best Price</span>
+              </div>
+            </div>
+
+            <!-- Recommendations Table -->
+            <div class="recommendations-container">
+              <div class="recommendations-header">
+                <i class="fas fa-star"></i>
+                Your Saved Recommendations
+              </div>
+
+              <!-- Table Header (hidden on mobile) -->
+              <div class="recommendations-table-header">
+                <div>Laptop Details</div>
+                <div>Price</div>
+                <div>Match Score</div>
+                <div>Date Saved</div>
+                <div>Actions</div>
+              </div>
+
+              <!-- Recommendations List -->
               {% for recommendation in recommendations %}
-              <div class="col-lg-6 col-xl-4 mb-4">
-                <div class="recommendation-card">
-                  <div class="recommendation-header">
-                    <h4 class="laptop-name">
-                      {{ recommendation.laptop_name }}
-                    </h4>
-                    <span class="similarity-badge">
-                      {{ "%.0f" | format(recommendation.similarity_score * 100)
-                      }}% Match
-                    </span>
-                  </div>
+              <div class="recommendation-item">
+                <!-- Laptop Info -->
+                <div class="laptop-info">
+                  <h5 class="laptop-name">{{ recommendation.laptop_name }}</h5>
+                  <div class="laptop-specs">{{ recommendation.specs }}</div>
+                </div>
 
-                  <div class="specs-grid">
-                    <div class="spec-item">
-                      <div class="spec-label">Specifications</div>
-                      <div class="spec-value">{{ recommendation.specs }}</div>
-                    </div>
+                <!-- Price Info -->
+                <div class="price-info">
+                  <div class="price-value">
+                    ₹{{ "%.2f" | format(recommendation.price) }}
                   </div>
+                </div>
 
-                  <div class="price-section">
-                    <div>
-                      <div class="price-value">
-                        ₹{{ "%.2f" | format(recommendation.price) }}
-                      </div>
-                      <div class="saved-date">
-                        Saved: {{ recommendation.saved_at.strftime('%Y-%m-%d
-                        %H:%M') }}
-                      </div>
-                    </div>
-                    <form
-                      action="{{ url_for('delete_recommendation', rid=recommendation.rid) }}"
-                      method="POST"
-                      style="display: inline"
-                      onsubmit="return confirm('Are you sure you want to delete this recommendation?');"
+                <!-- Similarity Info -->
+                <div class="similarity-info">
+                  <span class="similarity-badge">
+                    {{ "%.0f" | format(recommendation.similarity_score * 100)
+                    }}% Match
+                  </span>
+                </div>
+
+                <!-- Date Info -->
+                <div class="date-info">
+                  <div class="date-value">
+                    {{ recommendation.saved_at.strftime('%b %d, %Y') }}<br />
+                    <small class="text-muted"
+                      >{{ recommendation.saved_at.strftime('%I:%M %p') }}</small
                     >
-                      <button type="submit" class="delete-btn">
-                        <i class="fas fa-trash"></i> Delete
-                      </button>
-                    </form>
                   </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-buttons">
+                  <form
+                    action="{{ url_for('delete_recommendation', rid=recommendation.rid) }}"
+                    method="POST"
+                    style="display: inline"
+                    onsubmit="return confirm('Are you sure you want to delete this recommendation?');"
+                  >
+                    <button type="submit" class="delete-btn">
+                      <i class="fas fa-trash"></i>
+                      Delete
+                    </button>
+                  </form>
                 </div>
               </div>
               {% endfor %}
             </div>
+
             {% else %}
-            <div class="empty-state">
-              <i class="fas fa-clipboard-list"></i>
-              <h3>No Saved Recommendations</h3>
-              <p>You haven't saved any laptop recommendations yet.</p>
+            <!-- Empty State -->
+            <div class="recommendations-container">
+              <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No Saved Recommendations</h3>
+                <p>You haven't saved any laptop recommendations yet.</p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                  <i class="fas fa-search"></i> Find Recommendations
+                </a>
+              </div>
             </div>
             {% endif %}
           </div>

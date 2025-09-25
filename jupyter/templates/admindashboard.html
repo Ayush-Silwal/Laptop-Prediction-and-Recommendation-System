@@ -453,17 +453,17 @@
                         <tbody>
                           {% for user in users[:5] %}
                           <tr>
-                            <td>{{ user.uid }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
+                            <td>{{ user['uid'] }}</td>
+                            <td>{{ user['username'] }}</td>
+                            <td>{{ user['email'] }}</td>
                             <td>
                               <a
-                                href="{{ url_for('edit_user', user_id=user.uid) }}"
+                                href="{{ url_for('edit_user', user_id=user['uid']) }}"
                                 class="btn btn-sm btn-info"
                                 >Edit</a
                               >
                               <a
-                                href="{{ url_for('delete_user', user_id=user.uid) }}"
+                                href="{{ url_for('delete_user', user_id=user['uid']) }}"
                                 class="btn btn-sm btn-danger"
                                 >Delete</a
                               >
