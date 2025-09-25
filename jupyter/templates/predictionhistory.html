@@ -40,6 +40,91 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
       }
+      /* Modal Styling */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e3e6f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #4e73df;
+      }
+      .modal-close {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #6c757d;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        color: #dc3545;
+      }
+      .spec-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #333;
+      }
+      .form-group select,
+      .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #d1d3e2;
+        border-radius: 5px;
+        font-size: 0.9rem;
+      }
+      .form-group .error {
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        display: block;
+      }
+      .predict-btn {
+        background-color: #4e73df;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+      .predict-btn:hover {
+        background-color: #2e59d9;
+      }
     </style>
   </head>
   <body id="page-top">
@@ -88,7 +173,7 @@
 
         <!-- Nav Item - Recommendations -->
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{{ url_for('recommendation_history') }}">
             <i class="fas fa-fw fa-table"></i>
             <span>Recommendation History</span></a
           >
@@ -96,7 +181,7 @@
 
         <!-- Nav Item - Bookings -->
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{{ url_for('booking_history') }}">
             <i class="fas fa-fw fa-shopping-cart"></i>
             <span>Booking History</span></a
           >
@@ -105,7 +190,7 @@
         <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block" />
 
-        <!-- Sidebar Toggler (Sidebar) -->
+        <!-- Sidebar Toggle (Sidebar) -->
         <div class="text-center d-none d-md-inline">
           <button class="rounded-circle border-0" id="sidebarToggle"></button>
         </div>
@@ -200,11 +285,12 @@
                 <h6 class="m-0 font-weight-bold text-primary">
                   All Predictions
                 </h6>
-                <a
-                  href="{{ url_for('index') }}#prediction-form"
+                <button
                   class="btn btn-sm btn-primary"
-                  >New Prediction</a
+                  onclick="openPredictionModal()"
                 >
+                  New Prediction
+                </button>
               </div>
               <div class="card-body">
                 {% if predictions %}
@@ -230,7 +316,9 @@
                           }}
                         </td>
                         <td>{{ prediction.laptop_specs }}</td>
-                        <td>${{ "%.2f" % prediction.predicted_price }}</td>
+                        <td>
+                          ₹{{ "%.2f" | format(prediction.predicted_price) }}
+                        </td>
                         <td>
                           <a
                             href="{{ url_for('view_prediction', pid=prediction.pid) }}"
@@ -260,6 +348,187 @@
             </div>
           </div>
           <!-- /.container-fluid -->
+          <!-- Prediction Modal -->
+          <div id="predictionModal" class="modal">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Laptop Price Prediction</h3>
+                <span class="modal-close" onclick="closePredictionModal()"
+                  >&times;</span
+                >
+              </div>
+              <form
+                method="POST"
+                action="{{ url_for('predict_history') }}"
+                id="prediction-form"
+              >
+                <div class="spec-form">
+                  <div class="form-group">
+                    <label for="company"
+                      ><i class="fas fa-tag"></i> Brand</label
+                    >
+                    <select name="company" id="company" required>
+                      {% for company in companies %}
+                      <option value="{{ company }}">{{ company }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="type"><i class="fas fa-laptop"></i> Type</label>
+                    <select name="type" id="type" required>
+                      {% for type in types %}
+                      <option value="{{ type }}">{{ type }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ram"
+                      ><i class="fas fa-memory"></i> RAM (GB)</label
+                    >
+                    <select name="ram" id="ram" required>
+                      {% for ram in [4, 8, 16, 32, 64] %}
+                      <option value="{{ ram }}">{{ ram }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="weight"
+                      ><i class="fas fa-weight"></i> Weight (kg)</label
+                    >
+                    <input
+                      type="number"
+                      name="weight"
+                      id="weight"
+                      step="0.01"
+                      value="2.0"
+                      min="1"
+                      max="4"
+                      required
+                    />
+                    <span id="weightError" class="error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="touchscreen"
+                      ><i class="fas fa-touchpad"></i> Touchscreen</label
+                    >
+                    <select name="touchscreen" id="touchscreen" required>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ips"
+                      ><i class="fas fa-desktop"></i> IPS Display</label
+                    >
+                    <select name="ips" id="ips" required>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="screen_size"
+                      ><i class="fas fa-expand"></i> Screen Size (Inches)</label
+                    >
+                    <input
+                      type="number"
+                      name="screen_size"
+                      id="screen_size"
+                      step="0.1"
+                      value="15.6"
+                      min="10"
+                      max="17"
+                      required
+                    />
+                    <span id="screenSizeError" class="error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="resolution"
+                      ><i class="fas fa-desktop"></i> Resolution</label
+                    >
+                    <select name="resolution" id="resolution" required>
+                      <option value="1920x1080">1920x1080</option>
+                      <option value="1366x768">1366x768</option>
+                      <option value="1600x900">1600x900</option>
+                      <option value="3840x2160">3840x2160</option>
+                      <option value="3200x1800">3200x1800</option>
+                      <option value="2880x1800">2880x1800</option>
+                      <option value="2560x1600">2560x1600</option>
+                      <option value="2560x1440">2560x1440</option>
+                      <option value="2304x1440">2304x1440</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="cpu"
+                      ><i class="fas fa-microchip"></i> CPU Brand</label
+                    >
+                    <select name="cpu" id="cpu" required>
+                      {% for cpu in cpus %}
+                      <option value="{{ cpu }}">{{ cpu }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="HDD"><i class="fas fa-hdd"></i> HDD (GB)</label>
+                    <select name="HDD" id="HDD" required>
+                      <option value="0">0</option>
+                      <option value="128">128</option>
+                      <option value="256">256</option>
+                      <option value="512">512</option>
+                      <option value="1024">1024</option>
+                      <option value="2048">2048</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="SSD"><i class="fas fa-hdd"></i> SSD (GB)</label>
+                    <select name="SSD" id="SSD" required>
+                      <option value="0">0</option>
+                      <option value="128">128</option>
+                      <option value="256">256</option>
+                      <option value="512">512</option>
+                      <option value="1024">1024</option>
+                    </select>
+                    <span id="storageError" class="error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="gpu"
+                      ><i class="fas fa-microchip"></i> GPU Brand</label
+                    >
+                    <select name="gpu" id="gpu" required>
+                      {% for gpu in gpus %}
+                      <option value="{{ gpu }}">{{ gpu }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="os"
+                      ><i class="fas fa-window-restore"></i> OS Type</label
+                    >
+                    <select name="os" id="os" required>
+                      {% for os in oss %}
+                      <option value="{{ os }}">{{ os }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <button type="submit" id="predict-btn" class="predict-btn">
+                    Predict Price
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
         <!-- End of Main Content -->
 
@@ -291,5 +560,61 @@
 
     <!-- SB Admin 2 JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+
+    <!-- Modal JavaScript -->
+    <script>
+      function openPredictionModal() {
+        document.getElementById("predictionModal").style.display = "block";
+      }
+
+      function closePredictionModal() {
+        document.getElementById("predictionModal").style.display = "none";
+        document.getElementById("prediction-form").reset();
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("predictionModal");
+        if (event.target === modal) {
+          closePredictionModal();
+        }
+      };
+
+      // Client-side validation
+      document
+        .getElementById("prediction-form")
+        .addEventListener("submit", function (event) {
+          let valid = true;
+          const weight = document.getElementById("weight").value;
+          const screenSize = document.getElementById("screen_size").value;
+          const HDD = document.getElementById("HDD").value;
+          const SSD = document.getElementById("SSD").value;
+
+          // Reset error messages
+          document.getElementById("weightError").textContent = "";
+          document.getElementById("screenSizeError").textContent = "";
+          document.getElementById("storageError").textContent = "";
+
+          if (weight < 1 || weight > 4) {
+            document.getElementById("weightError").textContent =
+              "Weight must be between 1 and 4 kg.";
+            valid = false;
+          }
+          if (screenSize < 10 || screenSize > 17) {
+            document.getElementById("screenSizeError").textContent =
+              "Screen size must be between 10 and 17 inches.";
+            valid = false;
+          }
+          if (HDD == 0 && SSD == 0) {
+            document.getElementById("storageError").textContent =
+              "Select a non-zero value for HDD or SSD.";
+            valid = false;
+          }
+
+          if (!valid) {
+            event.preventDefault();
+          }
+        });
+    </script>
   </body>
 </html>

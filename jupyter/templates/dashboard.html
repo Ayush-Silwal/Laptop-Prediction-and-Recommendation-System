@@ -60,6 +60,29 @@
         display: block;
         font-size: 18px;
       }
+      .flash-messages {
+        margin: 1rem 0;
+      }
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .flash-messages .error,
+      .flash-messages .danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
     </style>
   </head>
   <body id="page-top">
@@ -108,7 +131,7 @@
 
         <!-- Nav Item - Recommendations -->
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{{ url_for('recommendation_history') }}">
             <i class="fas fa-fw fa-table"></i>
             <span>Recommendation History</span></a
           >
@@ -125,7 +148,7 @@
         <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block" />
 
-        <!-- Sidebar Toggler (Sidebar) -->
+        <!-- Sidebar Toggle (Sidebar) -->
         <div class="text-center d-none d-md-inline">
           <button class="rounded-circle border-0" id="sidebarToggle"></button>
         </div>
@@ -162,7 +185,7 @@
                   aria-expanded="false"
                 >
                   <span class="mr-2 d-none d-lg-inline text-gray-600 small"
-                    >User</span
+                    >{{ username | default('User') }}</span
                   >
                   <img
                     class="img-profile rounded-circle"
@@ -210,6 +233,18 @@
               </a>
             </div>
 
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <ul>
+                {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %} {% endwith %}
+            </div>
+
             <!-- Content Row -->
             <div class="row">
               <!-- Total Predictions Card -->
@@ -247,11 +282,12 @@
                           Average Predicted Price
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                          ${{ user_stats.average_price }}
+                          ₹{{ "{:,.2f}".format(user_stats.average_price|float)
+                          if user_stats.average_price else "0.00" }}
                         </div>
                       </div>
                       <div class="col-auto">
-                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
                       </div>
                     </div>
                   </div>
@@ -325,6 +361,7 @@
                     >
                   </div>
                   <div class="card-body">
+                    {% if recent_predictions %}
                     <div class="table-responsive">
                       <table
                         class="table table-bordered"
@@ -340,42 +377,30 @@
                           </tr>
                         </thead>
                         <tbody>
+                          {% for prediction in recent_predictions %}
                           <tr>
-                            <td>2023-10-15</td>
-                            <td>Dell, Intel i7, 16GB RAM, 512GB SSD</td>
-                            <td>$1,299.99</td>
                             <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                              <a href="#" class="btn btn-sm btn-danger"
-                                >Delete</a
+                              {{ prediction.created_at.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td>{{ prediction.laptop_specs }}</td>
+                            <td>
+                              ₹{{ "%.2f" | format(prediction.predicted_price) }}
+                            </td>
+                            <td>
+                              <a
+                                href="{{ url_for('view_prediction', pid=prediction.pid) }}"
+                                class="btn btn-sm btn-info"
+                                >View</a
                               >
                             </td>
                           </tr>
-                          <tr>
-                            <td>2023-10-12</td>
-                            <td>HP, AMD Ryzen 5, 8GB RAM, 256GB SSD</td>
-                            <td>$899.99</td>
-                            <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                              <a href="#" class="btn btn-sm btn-danger"
-                                >Delete</a
-                              >
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>2023-10-10</td>
-                            <td>Apple, M1 Chip, 8GB RAM, 256GB SSD</td>
-                            <td>$1,199.99</td>
-                            <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                              <a href="#" class="btn btn-sm btn-danger"
-                                >Delete</a
-                              >
-                            </td>
-                          </tr>
+                          {% endfor %}
                         </tbody>
                       </table>
                     </div>
+                    {% else %}
+                    <p>No predictions found.</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -389,8 +414,15 @@
                     <h6 class="m-0 font-weight-bold text-primary">
                       Recent Recommendations
                     </h6>
+                    <a
+                      href="{{ url_for('recommendation_history') }}"
+                      class="btn btn-sm btn-primary"
+                      >View All</a
+                    >
                   </div>
                   <div class="card-body">
+                    {% if recent_recommendations %} {% for recommendation in
+                    recent_recommendations %}
                     <div class="mb-3">
                       <div class="card border-left-info shadow h-100 py-2">
                         <div class="card-body">
@@ -399,15 +431,21 @@
                               <div
                                 class="text-xs font-weight-bold text-info text-uppercase mb-1"
                               >
-                                Dell XPS 13
+                                {{ recommendation.laptop_name }}
                               </div>
                               <div
                                 class="h5 mb-0 font-weight-bold text-gray-800"
                               >
-                                $1,299.99
+                                ₹{{ "%.2f" | format(recommendation.price) }}
                               </div>
                               <div class="mt-2 text-muted">
-                                Saved: 2023-10-15
+                                Similarity: {{ "%.2f" |
+                                format(recommendation.similarity_score * 100)
+                                }}%
+                              </div>
+                              <div class="mt-1 text-muted">
+                                Saved: {{
+                                recommendation.saved_at.strftime('%Y-%m-%d') }}
                               </div>
                             </div>
                             <div class="col-auto">
@@ -417,106 +455,9 @@
                         </div>
                       </div>
                     </div>
-                    <div class="mb-3">
-                      <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                          <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                              <div
-                                class="text-xs font-weight-bold text-info text-uppercase mb-1"
-                              >
-                                HP Spectre x360
-                              </div>
-                              <div
-                                class="h5 mb-0 font-weight-bold text-gray-800"
-                              >
-                                $1,199.99
-                              </div>
-                              <div class="mt-2 text-muted">
-                                Saved: 2023-10-12
-                              </div>
-                            </div>
-                            <div class="col-auto">
-                              <i class="fas fa-laptop fa-2x text-gray-300"></i>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Content Row -->
-            <div class="row">
-              <!-- Booking History -->
-              <div class="col-12">
-                <div class="card shadow mb-4">
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      Booking History
-                    </h6>
-                  </div>
-                  <div class="card-body">
-                    <div class="table-responsive">
-                      <table
-                        class="table table-bordered"
-                        width="100%"
-                        cellspacing="0"
-                      >
-                        <thead>
-                          <tr>
-                            <th>Booking ID</th>
-                            <th>Product</th>
-                            <th>Date</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>#B001</td>
-                            <td>Dell XPS 13</td>
-                            <td>2023-10-15</td>
-                            <td>$1,299.99</td>
-                            <td>
-                              <span class="badge badge-success">Delivered</span>
-                            </td>
-                            <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>#B002</td>
-                            <td>HP Spectre x360</td>
-                            <td>2023-09-28</td>
-                            <td>$1,199.99</td>
-                            <td>
-                              <span class="badge badge-warning"
-                                >Processing</span
-                              >
-                            </td>
-                            <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>#B003</td>
-                            <td>MacBook Air</td>
-                            <td>2023-09-15</td>
-                            <td>$999.99</td>
-                            <td>
-                              <span class="badge badge-success">Delivered</span>
-                            </td>
-                            <td>
-                              <a href="#" class="btn btn-sm btn-info">View</a>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    {% endfor %} {% else %}
+                    <p>No recommendations found.</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>

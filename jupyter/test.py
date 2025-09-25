@@ -247,33 +247,6 @@ def predict():
                         'os': example.get('os', 'Unknown OS')
                     })
 
-        # Save prediction to database if user is logged in
-        if 'user_id' in session:
-            connection = create_connection()
-            if connection:
-                try:
-                    with connection.cursor() as cursor:
-                        cursor.execute(
-                            """
-                            INSERT INTO predictions (
-                                uid, company, type, ram, weight, touchscreen, ips,
-                                screen_size, resolution, cpu, hdd, ssd, gpu, os, predicted_price
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """,
-                            (
-                                session['user_id'], model_data['Company'], model_data['TypeName'],
-                                model_data['Ram'], model_data['Weight'], model_data['Touchscreen'],
-                                model_data['Ips'], screen_size, resolution, model_data['Cpu brand'],
-                                model_data['HDD'], model_data['SSD'], model_data['Gpu brand'],
-                                model_data['os'], predicted_price
-                            )
-                        )
-                        connection.commit()
-                except Exception as e:
-                    print(f"Error saving prediction to database: {str(e)}")
-                finally:
-                    close_connection(connection)
-
         return render_template('index.html',
                                predicted_price=formatted_price,
                                recommendations=recommendations,
@@ -307,6 +280,193 @@ def predict():
                                admin_login_url=url_for('admin_login'),
                                signup_url=url_for('signup'),
                                _anchor='predict-result')
+
+@app.route('/predict_history', methods=['POST'])
+def predict_history():
+    form_data = request.form.to_dict()
+
+    try:
+        if preprocessor is None or rf_model is None or knn_model is None or kmeans_model is None:
+            raise Exception("Model not loaded properly. Please check the model files.")
+
+        # Map form fields to model-expected fields
+        model_data = {
+            'Company': form_data.get('company'),
+            'TypeName': form_data.get('type'),
+            'Ram': form_data.get('ram'),
+            'Weight': form_data.get('weight'),
+            'Touchscreen': 1 if form_data.get('touchscreen') == 'Yes' else 0,
+            'Ips': 1 if form_data.get('ips') == 'Yes' else 0,
+            'Cpu brand': form_data.get('cpu'),
+            'Gpu brand': form_data.get('gpu'),
+            'HDD': form_data.get('HDD'),
+            'SSD': form_data.get('SSD'),
+            'os': form_data.get('os')
+        }
+
+        # Calculate PPI
+        resolution = form_data.get('resolution')
+        screen_size = form_data.get('screen_size')
+        model_data['ppi'] = calculate_ppi(resolution, screen_size)
+
+        input_df = pd.DataFrame([model_data])
+
+        # Convert numeric fields
+        for col in ['Ram', 'Weight', 'Touchscreen', 'Ips', 'ppi', 'HDD', 'SSD']:
+            input_df[col] = pd.to_numeric(input_df[col], errors='coerce')
+
+        # Server-side validation
+        if input_df[['Ram', 'Weight', 'Touchscreen', 'Ips', 'ppi', 'HDD', 'SSD']].isna().any().any():
+            raise ValueError("Invalid input: Please ensure all numeric fields are valid numbers.")
+        if float(input_df['Weight'].iloc[0]) < 1 or float(input_df['Weight'].iloc[0]) > 4:
+            raise ValueError("Weight must be between 1 kg and 4 kg.")
+        if float(input_df['ppi'].iloc[0]) < 100 or float(input_df['ppi'].iloc[0]) > 500:
+            raise ValueError("Calculated PPI must be between 100 and 500.")
+        if int(input_df['HDD'].iloc[0]) == 0 and int(input_df['SSD'].iloc[0]) == 0:
+            raise ValueError("You must select a non-zero value for either HDD or SSD.")
+
+        # Preprocess input for prediction
+        X_transformed = preprocessor.transform(input_df)
+        if hasattr(X_transformed, 'toarray'):
+            X_transformed = X_transformed.toarray()
+
+        # Price prediction using RandomForest
+        prediction = rf_model.predict(X_transformed)
+        predicted_price = np.exp(prediction[0])  # Reverse log transformation
+        formatted_price = f"₹{predicted_price:,.2f}"
+
+        # Recommendations using CustomKNN
+        recommendations = []
+        if knn_model and hasattr(knn_model, 'get_similar_laptops'):
+            recommendations = knn_model.get_similar_laptops(X_transformed, df, top_n=5)
+        else:
+            # Fallback: Manual KNN recommendation
+            distances = []
+            X_train_transformed = preprocessor.transform(df.drop(columns=['Price']))
+            if hasattr(X_train_transformed, 'toarray'):
+                X_train_transformed = X_train_transformed.toarray()
+            for i, sample in enumerate(X_train_transformed):
+                cosine_sim = knn_model._cosine_similarity(X_transformed[0], sample)
+                distances.append((cosine_sim, i))
+            top_indices = [idx for _, idx in sorted(distances, reverse=True)[:5]]
+            for i, idx in enumerate(top_indices):
+                rec = df.iloc[idx].to_dict()
+                storage_parts = []
+                if rec.get('SSD', 0) > 0:
+                    storage_parts.append(f"{int(rec['SSD'])}GB SSD")
+                if rec.get('HDD', 0) > 0:
+                    storage_parts.append(f"{int(rec['HDD'])}GB HDD")
+                storage = " + ".join(storage_parts) if storage_parts else "No storage info"
+                features = []
+                if rec.get('Touchscreen', 0):
+                    features.append('Touchscreen')
+                if rec.get('Ips', 0):
+                    features.append('IPS Display')
+                features_text = ', '.join(features) if features else 'Standard Features'
+                recommendations.append({
+                    'Company': rec.get('Company', 'Unknown'),
+                    'TypeName': rec.get('TypeName', 'Laptop'),
+                    'Title': f"{rec.get('Company', 'Unknown')} {rec.get('TypeName', 'Laptop')}",
+                    'Ram': f"{int(rec.get('Ram', 0))}GB",
+                    'Storage': storage,
+                    'Cpu_brand': rec.get('Cpu brand', 'Unknown'),
+                    'Gpu_brand': rec.get('Gpu brand', 'Unknown'),
+                    'Weight': f"{rec.get('Weight', 0):.1f}kg" if rec.get('Weight', 0) > 0 else "Weight N/A",
+                    'Price': f"₹{rec.get('Price', 0):,.2f}",
+                    'Similarity': f"{distances[i][0]:.2f}",
+                    'Features': features_text,
+                    'Touchscreen': 'Yes' if rec.get('Touchscreen', 0) else 'No',
+                    'Ips': 'Yes' if rec.get('Ips', 0) else 'No',
+                    'os': rec.get('os', 'Unknown OS')
+                })
+
+        # Save prediction to database if user is logged in
+        if 'user_id' in session:
+            connection = create_connection()
+            if connection:
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            """
+                            INSERT INTO predictions (
+                                uid, company, type, ram, weight, touchscreen, ips,
+                                screen_size, resolution, cpu, hdd, ssd, gpu, os, predicted_price
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                session['user_id'], model_data['Company'], model_data['TypeName'],
+                                model_data['Ram'], model_data['Weight'], model_data['Touchscreen'],
+                                model_data['Ips'], screen_size, resolution, model_data['Cpu brand'],
+                                model_data['HDD'], model_data['SSD'], model_data['Gpu brand'],
+                                model_data['os'], predicted_price
+                            )
+                        )
+                        connection.commit()
+                        # Get the inserted prediction ID
+                        cursor.execute("SELECT LAST_INSERT_ID() AS pid")
+                        prediction_id = cursor.fetchone()[0]
+                except Exception as e:
+                    print(f"Error saving prediction to database: {str(e)}")
+                    flash(f"Error saving prediction: {str(e)}", 'error')
+                finally:
+                    close_connection(connection)
+
+            # Save recommendations to database
+            if recommendations and 'user_id' in session:
+                connection = create_connection()
+                if connection:
+                    try:
+                        with connection.cursor() as cursor:
+                            for rec in recommendations:
+                                specs = f"RAM: {rec['Ram']}, Storage: {rec['Storage']}, CPU: {rec['Cpu_brand']}, GPU: {rec['Gpu_brand']}, Features: {rec['Features']}, OS: {rec['os']}"
+                                price = float(rec['Price'].replace('₹', '').replace(',', ''))
+                                similarity_score = float(rec['Similarity'])
+                                cursor.execute(
+                                    """
+                                    INSERT INTO recommendations (uid, laptop_name, specs, price, similarity_score)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (session['user_id'], rec['Title'], specs, price, similarity_score)
+                                )
+                            connection.commit()
+                    except Exception as e:
+                        print(f"Error saving recommendations to database: {str(e)}")
+                        flash(f"Error saving recommendations: {str(e)}", 'error')
+                    finally:
+                        close_connection(connection)
+
+        # Get username for template
+        username = 'User'
+        if 'user_id' in session:
+            connection = create_connection()
+            if connection:
+                try:
+                    with connection.cursor(dictionary=True) as cursor:
+                        cursor.execute("SELECT username FROM users WHERE uid = %s", (session['user_id'],))
+                        user = cursor.fetchone()
+                        if user:
+                            username = user['username']
+                except Exception as e:
+                    print(f"Error fetching username: {str(e)}")
+                finally:
+                    close_connection(connection)
+
+        return render_template('predict.html', 
+                               predicted_price=formatted_price,
+                               recommendations=recommendations,
+                               username=username,
+                               form_data=form_data,
+                               companies=companies,
+                               types=types,
+                               cpus=cpus,
+                               gpus=gpus,
+                               oss=oss)
+
+    except Exception as e:
+        error_msg = f"Prediction or clustering failed: {str(e)}"
+        print(error_msg)
+        flash(error_msg, 'error')
+        return redirect(url_for('prediction_history'))
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
@@ -828,15 +988,100 @@ def prediction_history():
         predictions = cursor.fetchall()
         print(f"Fetched {len(predictions)} predictions for user_id {user_id}")
 
-        return render_template('predictionhistory.html', predictions=predictions, username=username)
+        return render_template('predictionhistory.html', predictions=predictions, username=username, companies=companies, types=types, cpus=cpus, gpus=gpus, oss=oss)
     except Exception as e:
         print(f"Error fetching predictions for user_id {user_id}: {str(e)}")
         flash(f"Error fetching predictions: {str(e)}", 'error')
-        return render_template('predictionhistory.html', predictions=[], username='User')
+        return render_template('predictionhistory.html', predictions=[], username='User', companies=companies, types=types, cpus=cpus, gpus=gpus, oss=oss)
     finally:
         if 'cursor' in locals():
             cursor.close()
         close_connection(connection)
+
+@app.route('/view_prediction/<int:pid>')
+def view_prediction(pid):
+    if 'user_id' not in session:
+        flash('Please log in to view prediction details.', 'error')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    connection = create_connection()
+    if not connection:
+        flash('Database connection error.', 'error')
+        return redirect(url_for('prediction_history'))
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT * FROM predictions WHERE pid = %s AND uid = %s
+        """, (pid, user_id))
+        prediction = cursor.fetchone()
+        if not prediction:
+            flash('Prediction not found or you do not have permission to view it.', 'error')
+            return redirect(url_for('prediction_history'))
+
+        # Prepare form_data to match predict.html
+        form_data = {
+            'company': prediction['company'],
+            'type': prediction['type'],
+            'ram': prediction['ram'],
+            'weight': prediction['weight'],
+            'touchscreen': prediction['touchscreen'],
+            'ips': prediction['ips'],
+            'screen_size': prediction['screen_size'],
+            'resolution': prediction['resolution'],
+            'cpu': prediction['cpu'],
+            'HDD': prediction['hdd'],
+            'SSD': prediction['ssd'],
+            'gpu': prediction['gpu'],
+            'os': prediction['os']
+        }
+
+        # Fetch recommendations (adjust query to match your recommendation logic)
+        cursor.execute("""
+            SELECT laptop_name AS Product, specs, price AS Price, similarity_score
+            FROM recommendations
+            WHERE uid = %s AND saved_at = %s
+            ORDER BY similarity_score DESC
+            LIMIT 5
+        """, (user_id, prediction['created_at']))
+        recommendations = cursor.fetchall()
+
+        # Transform recommendations to match expected format
+        for rec in recommendations:
+            # Parse specs string to extract fields (this is a simple heuristic; adjust as needed)
+            specs = rec['specs']
+            rec['Company'] = specs.split(' ')[0]
+            rec['TypeName'] = specs.split(' ')[1]
+            rec['Ram'] = specs.split('RAM')[0].split()[-2] + ' GB'
+            rec['Cpu'] = ' '.join(specs.split('CPU')[0].split()[-2:])
+            rec['HDD'] = specs.split('HDD')[0].split()[-2] + ' GB'
+            rec['SSD'] = specs.split('SSD')[0].split()[-2] + ' GB'
+            rec['Gpu'] = ' '.join(specs.split('GPU')[0].split()[-2:])
+            rec['OpSys'] = specs.split('OS')[0].split()[-1]
+            rec['Inches'] = specs.split('inches')[0].split()[-2]
+            rec['resolution'] = specs.split('resolution')[0].split()[-1]
+
+        cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
+        user = cursor.fetchone()
+        username = user['username'] if user else 'User'
+
+        return render_template('predict.html',
+                               predicted_price=f"₹{prediction['predicted_price']:,.2f}",
+                               recommendations=recommendations,
+                               username=username,
+                               form_data=form_data,
+                               companies=companies,
+                               types=types,
+                               cpus=cpus,
+                               gpus=gpus,
+                               oss=oss)
+    except Exception as e:
+        flash(f"Error fetching prediction page: {str(e)}", 'error')
+        return redirect(url_for('prediction_history'))
+    finally:
+        cursor.close()
+        close_connection(connection)    
 
 @app.route('/delete_prediction/<int:pid>', methods=['POST'])
 def delete_prediction(pid):
@@ -846,224 +1091,171 @@ def delete_prediction(pid):
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    print(f"Attempting to delete prediction with pid {pid} for user_id {user_id}")
     connection = create_connection()
     if not connection:
         print("Database connection failed")
         flash('Database connection error.', 'error')
         return redirect(url_for('prediction_history'))
 
-    cursor = None
     try:
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM predictions WHERE pid = %s AND uid = %s", (pid, user_id))
-        if cursor.rowcount == 0:
-            print(f"No prediction found with pid {pid} for user_id {user_id}")
-            flash('Prediction not found or you do not have permission to delete it.', 'error')
-        else:
+        with connection.cursor() as cursor:
+            # Verify the prediction belongs to the user
+            cursor.execute("SELECT pid FROM predictions WHERE pid = %s AND uid = %s", (pid, user_id))
+            if not cursor.fetchone():
+                print(f"Prediction {pid} not found or not owned by user {user_id}")
+                flash('Prediction not found or you do not have permission to delete it.', 'error')
+                return redirect(url_for('prediction_history'))
+
+            cursor.execute("DELETE FROM predictions WHERE pid = %s", (pid,))
             connection.commit()
-            print(f"Prediction with pid {pid} deleted successfully")
+            print(f"Prediction {pid} deleted successfully")
             flash('Prediction deleted successfully.', 'success')
-        return redirect(url_for('prediction_history'))
     except Exception as e:
-        print(f"Error deleting prediction with pid {pid}: {str(e)}")
+        print(f"Error deleting prediction {pid}: {str(e)}")
         flash(f"Error deleting prediction: {str(e)}", 'error')
-        return redirect(url_for('prediction_history'))
     finally:
-        if cursor:
-            cursor.close()
         close_connection(connection)
 
-@app.route('/view_prediction/<int:pid>')
-def view_prediction(pid):
+    return redirect(url_for('prediction_history'))
+
+@app.route('/recommendation_history')
+def recommendation_history():
     if 'user_id' not in session:
         print("No user_id in session, redirecting to login")
-        flash('Please log in to view predictions.', 'error')
+        flash('Please log in to view your recommendation history.', 'error')
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    print(f"Accessing /view_prediction route for pid {pid} and user_id {user_id}")
+    print(f"Accessing /recommendation_history route for user_id: {user_id}")
+
     connection = create_connection()
     if not connection:
         print("Database connection failed")
         flash('Database connection error.', 'error')
-        return redirect(url_for('prediction_history'))
+        return redirect(url_for('dashboard'))
 
-    cursor = None
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT pid, created_at, predicted_price, company, type, ram, weight, touchscreen, ips,
-                   screen_size, resolution, cpu, hdd, ssd, gpu, os
-            FROM predictions
-            WHERE pid = %s AND uid = %s
-        """, (pid, user_id))
-        prediction = cursor.fetchone()
-        if not prediction:
-            print(f"No prediction found with pid {pid} for user_id {user_id}")
-            flash('Prediction not found.', 'error')
-            return redirect(url_for('prediction_history'))
-
         cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
         user = cursor.fetchone()
-        username = user['username'] if user else 'User'
+        if not user:
+            print(f"No user found for user_id: {user_id}")
+            flash('User not found. Please log in again.', 'error')
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
+
+        username = user['username']
         print(f"Username fetched: {username}")
 
-        return render_template('view_prediction.html', prediction=prediction, username=username)
+        cursor.execute("""
+            SELECT rid, laptop_name, specs, price, similarity_score, saved_at
+            FROM recommendations
+            WHERE uid = %s
+            ORDER BY saved_at DESC
+        """, (user_id,))
+        recommendations = cursor.fetchall()
+        print(f"Fetched {len(recommendations)} recommendations for user_id {user_id}")
+
+        return render_template('recommendationhistory.html', recommendations=recommendations, username=username)
     except Exception as e:
-        print(f"Error fetching prediction with pid {pid}: {str(e)}")
-        flash(f"Error fetching prediction: {str(e)}", 'error')
-        return redirect(url_for('prediction_history'))
+        print(f"Error fetching recommendations for user_id {user_id}: {str(e)}")
+        flash(f"Error fetching recommendations: {str(e)}", 'error')
+        return render_template('recommendationhistory.html', recommendations=[], username='User')
     finally:
-        if cursor:
+        if 'cursor' in locals():
+            cursor.close()
+        close_connection(connection)
+
+@app.route('/delete_recommendation/<int:rid>', methods=['POST'])
+def delete_recommendation(rid):
+    if 'user_id' not in session:
+        print("No user_id in session, redirecting to login")
+        flash('Please log in to delete recommendations.', 'error')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    connection = create_connection()
+    if not connection:
+        print("Database connection failed")
+        flash('Database connection error.', 'error')
+        return redirect(url_for('recommendation_history'))
+
+    try:
+        with connection.cursor() as cursor:
+            # Verify the recommendation belongs to the user
+            cursor.execute("SELECT rid FROM recommendations WHERE rid = %s AND uid = %s", (rid, user_id))
+            if not cursor.fetchone():
+                print(f"Recommendation {rid} not found or not owned by user {user_id}")
+                flash('Recommendation not found or you do not have permission to delete it.', 'error')
+                return redirect(url_for('recommendation_history'))
+
+            cursor.execute("DELETE FROM recommendations WHERE rid = %s", (rid,))
+            connection.commit()
+            print(f"Recommendation {rid} deleted successfully")
+            flash('Recommendation deleted successfully.', 'success')
+    except Exception as e:
+        print(f"Error deleting recommendation {rid}: {str(e)}")
+        flash(f"Error deleting recommendation: {str(e)}", 'error')
+    finally:
+        close_connection(connection)
+
+    return redirect(url_for('recommendation_history'))
+
+@app.route('/booking_history')
+def booking_history():
+    if 'user_id' not in session:
+        print("No user_id in session, redirecting to login")
+        flash('Please log in to view your booking history.', 'error')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    print(f"Accessing /booking_history route for user_id: {user_id}")
+
+    connection = create_connection()
+    if not connection:
+        print("Database connection failed")
+        flash('Database connection error.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT username FROM users WHERE uid = %s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            print(f"No user found for user_id: {user_id}")
+            flash('User not found. Please log in again.', 'error')
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
+
+        username = user['username']
+        print(f"Username fetched: {username}")
+
+        cursor.execute("""
+            SELECT bid, laptop_name, specs, price, booking_date
+            FROM bookings
+            WHERE uid = %s
+            ORDER BY booking_date DESC
+        """, (user_id,))
+        bookings = cursor.fetchall()
+        print(f"Fetched {len(bookings)} bookings for user_id {user_id}")
+
+        return render_template('bookinghistory.html', bookings=bookings, username=username)
+    except Exception as e:
+        print(f"Error fetching bookings for user_id {user_id}: {str(e)}")
+        flash(f"Error fetching bookings: {str(e)}", 'error')
+        return render_template('bookinghistory.html', bookings=[], username='User')
+    finally:
+        if 'cursor' in locals():
             cursor.close()
         close_connection(connection)
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    flash('You have been logged out successfully', 'success')
+    session.pop('user_id', None)
+    session.pop('username', None)
+    session.pop('admin_logged_in', None)
+    flash('You have been logged out.', 'success')
     return redirect(url_for('index'))
-
-@app.route('/save_recommendation', methods=['POST'])
-def save_recommendation():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login to save recommendations'})
-
-    try:
-        data = request.get_json()
-        laptop_name = data.get('laptop_name')
-        specs = data.get('specs')
-        price = data.get('price')
-        similarity_score = data.get('similarity_score')
-
-        connection = create_connection()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "INSERT INTO recommendations (uid, laptop_name, specs, price, similarity_score) VALUES (%s, %s, %s, %s, %s)",
-                        (session['user_id'], laptop_name, specs, price, similarity_score)
-                    )
-                    connection.commit()
-                    return jsonify({'success': True, 'message': 'Recommendation saved successfully'})
-            except Exception as e:
-                return jsonify({'success': False, 'message': f'Error: {str(e)}'})
-            finally:
-                close_connection(connection)
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
-
-@app.route('/create_booking', methods=['POST'])
-def create_booking():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login to create a booking'})
-
-    try:
-        data = request.get_json()
-        prediction_id = data.get('prediction_id')
-        product_name = data.get('product_name')
-        specs = data.get('specs')
-        price = data.get('price')
-
-        connection = create_connection()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "INSERT INTO bookings (uid, prediction_id, product_name, specs, price) VALUES (%s, %s, %s, %s, %s)",
-                        (session['user_id'], prediction_id, product_name, specs, price)
-                    )
-                    connection.commit()
-                    return jsonify({'success': True, 'message': 'Booking created successfully'})
-            except Exception as e:
-                return jsonify({'success': False, 'message': f'Error: {str(e)}'})
-            finally:
-                close_connection(connection)
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
-
-@app.route('/recommendation_history')
-def recommendation_history():
-    if 'user_id' not in session:
-        flash('Please login to view recommendation history', 'warning')
-        return redirect(url_for('index'))
-
-    connection = create_connection()
-    recommendations = []
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM recommendations WHERE uid = %s ORDER BY saved_at DESC", (session['user_id'],))
-                recommendations = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('recommendation_history.html', recommendations=recommendations)
-
-@app.route('/booking_history')
-def booking_history():
-    if 'user_id' not in session:
-        flash('Please login to view booking history', 'warning')
-        return redirect(url_for('index'))
-
-    connection = create_connection()
-    bookings = []
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM bookings WHERE uid = %s ORDER BY created_at DESC", (session['user_id'],))
-                bookings = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('booking_history.html', bookings=bookings)
-
-@app.route('/all_recommendations')
-def all_recommendations():
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    recommendations = []
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT r.*, u.username FROM recommendations r JOIN users u ON r.uid = u.uid ORDER BY r.saved_at DESC")
-                recommendations = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('all_recommendations.html', recommendations=recommendations)
-
-@app.route('/all_bookings')
-def all_bookings():
-    if 'admin_logged_in' not in session:
-        flash('Access denied. Admin login required.', 'error')
-        return redirect(url_for('admin_login'))
-
-    connection = create_connection()
-    bookings = []
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT b.*, u.username FROM bookings b JOIN users u ON b.uid = u.uid ORDER BY b.created_at DESC")
-                bookings = cursor.fetchall()
-        except Exception as e:
-            flash(f"An error occurred: {e}", 'error')
-        finally:
-            close_connection(connection)
-
-    return render_template('all_bookings.html', bookings=bookings)
 
 if __name__ == '__main__':
     app.run(debug=True)
