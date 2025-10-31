@@ -1,151 +1,585 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit User</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit User - Admin Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-        .form-container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-container h2 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: #333;
-        }
-
-        .form-container label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-        }
-
-        .form-container input[type="text"],
-        .form-container input[type="email"],
-        .form-container input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .form-container button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .form-container button:hover {
-            background-color: #45a049;
-        }
-
-        /* Error message styling */
-        .form-container .error {
-            color: #856404;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            text-align: center;
-        }
+      .flash-messages {
+        margin: 1rem 0;
+      }
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .flash-messages .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .validation-error {
+        color: #e74a3b;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+      }
+      .password-toggle {
+        cursor: pointer;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .error-container {
+        margin-bottom: 1rem;
+      }
+      .error-container ul {
+        list-style: none;
+        padding: 0;
+      }
+      .error-container li {
+        color: #dc3545;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      input.error-border {
+        border-color: #dc3545;
+      }
+      input.success-border {
+        border-color: #28a745;
+      }
+      .form-group {
+        position: relative;
+      }
+      .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+      }
+      .form-control {
+        padding-left: 40px;
+      }
     </style>
-</head>
-<body>
-    <header class="top">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='images/admin logo.jpg') }}" alt="Laptop Price Predictor Logo">
+  </head>
+  <body id="page-top">
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="{{ url_for('index') }}"
+        >
+          <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor Admin</div>
+        </a>
+
+        <hr class="sidebar-divider my-0" />
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admindashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+
+        <div class="sidebar-heading">Administration</div>
+
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('user_list') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_predictions') }}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>All Predictions</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_recommendations') }}">
+            <i class="fas fa-fw fa-table"></i>
+            <span>All Recommendations</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_categories') }}">
+            <i class="fas fa-fw fa-layer-group"></i>
+            <span>All Categories</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_bookings') }}">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>All Bookings</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider d-none d-md-block" />
+
+        <div class="text-center d-none d-md-inline">
+          <button class="rounded-circle border-0" id="sidebarToggle"></button>
         </div>
-        <h1>Edit User</h1>
-    </header>
-    <div class="container">
-        <div class="content">
-            <div class="form-container">
-                <h2>Edit User</h2>
-                
-                
-                {% if errors.conflict %}
-                    <div class="error">{{ errors.conflict }}</div>
-                {% endif %}
+      </ul>
 
-                <form method="POST" id="editUserForm">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" value="{{ user[1] }}">
-                    <div class="error" id="usernameError"></div>
+      <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+          <!-- Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <button
+              id="sidebarToggleTop"
+              class="btn btn-link d-md-none rounded-circle mr-3"
+            >
+              <i class="fa fa-bars"></i>
+            </button>
 
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" value="{{ user[2] }}">
-                    <div class="error" id="emailError"></div>
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item dropdown no-arrow">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small"
+                    >Admin</span
+                  >
+                  <img
+                    class="img-profile rounded-circle"
+                    src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
+                  />
+                </a>
+                <div
+                  class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown"
+                >
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Settings
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i
+                      class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
+                    ></i>
+                    Logout
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </nav>
 
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password">
-                    <div class="error" id="passwordError"></div>
-
-                    <button type="submit">Update User</button>
-                </form>
+          <div class="container-fluid">
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <ul>
+                {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %} {% endwith %}
             </div>
+
+            <h1 class="h3 mb-4 text-gray-800">Edit User</h1>
+
+            <div class="row">
+              <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      User Information
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <!-- Error Messages -->
+                    {% if errors %}
+                    <div class="error-container">
+                      <ul>
+                        {% if errors.username %}
+                        <li>{{ errors.username }}</li>
+                        {% endif %} {% if errors.email %}
+                        <li>{{ errors.email }}</li>
+                        {% endif %} {% if errors.password %}
+                        <li>{{ errors.password }}</li>
+                        {% endif %} {% if errors.confirmPassword %}
+                        <li>{{ errors.confirmPassword }}</li>
+                        {% endif %} {% if errors.general %}
+                        <li>{{ errors.general }}</li>
+                        {% endif %}
+                      </ul>
+                    </div>
+                    {% endif %}
+
+                    <form
+                      id="editUserForm"
+                      method="POST"
+                      action="{{ url_for('update_user', user_id=user.uid) }}"
+                    >
+                      <!-- CSRF Token would go here in a real application -->
+
+                      <div class="form-group">
+                        <label for="username">Username</label>
+                        <div class="position-relative">
+                          <input
+                            type="text"
+                            class="form-control {% if errors.username %}error-border{% endif %}"
+                            id="username"
+                            name="username"
+                            value="{{ user.username }}"
+                            required
+                            placeholder="Enter username"
+                          />
+                          <i class="fas fa-user input-icon"></i>
+                        </div>
+                        <div class="validation-error" id="username-error">
+                          Username must start with a letter and contain only
+                          letters, numbers, and underscores (6-20 characters)
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <div class="position-relative">
+                          <input
+                            type="email"
+                            class="form-control {% if errors.email %}error-border{% endif %}"
+                            id="email"
+                            name="email"
+                            value="{{ user.email }}"
+                            required
+                            placeholder="Enter email address"
+                          />
+                          <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                        <div class="validation-error" id="email-error">
+                          Please enter a valid email address
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="password"
+                          >Password (Leave blank to keep current
+                          password)</label
+                        >
+                        <div class="position-relative">
+                          <input
+                            type="password"
+                            class="form-control {% if errors.password %}error-border{% endif %}"
+                            id="password"
+                            name="password"
+                            placeholder="Enter new password"
+                          />
+                          <i class="fas fa-lock input-icon"></i>
+                          <span class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                          </span>
+                        </div>
+                        <div class="validation-error" id="password-error">
+                          Password must be at least 8 characters long and
+                          contain at least one uppercase letter, one lowercase
+                          letter, one number, and one special character
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="position-relative">
+                          <input
+                            type="password"
+                            class="form-control {% if errors.confirmPassword %}error-border{% endif %}"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Confirm new password"
+                          />
+                          <i class="fas fa-lock input-icon"></i>
+                          <span
+                            class="password-toggle"
+                            id="confirmPasswordToggle"
+                          >
+                            <i class="fas fa-eye"></i>
+                          </span>
+                        </div>
+                        <div
+                          class="validation-error"
+                          id="confirmPassword-error"
+                        >
+                          Passwords do not match
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="createdAt">Registration Date</label>
+                        <div class="position-relative">
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="createdAt"
+                            value="{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}"
+                            readonly
+                            disabled
+                          />
+                          <i class="fas fa-calendar input-icon"></i>
+                        </div>
+                      </div>
+
+                      <div class="d-flex justify-content-between">
+                        <a
+                          href="{{ url_for('user_list') }}"
+                          class="btn btn-secondary"
+                        >
+                          <i class="fas fa-arrow-left mr-2"></i>Back to Users
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                          <i class="fas fa-save mr-2"></i>Update User
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      User Statistics
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="text-center">
+                      <img
+                        class="img-fluid px-3 px-sm-4 mt-3 mb-4"
+                        style="width: 15rem"
+                        src="https://source.unsplash.com/QAB-WJcbgJk/500x500"
+                        alt="User profile"
+                      />
+                    </div>
+                    <p><strong>User ID:</strong> {{ user.uid }}</p>
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p>
+                      <strong>Registered:</strong> {{
+                      user.created_at.strftime('%Y-%m-%d %H:%M') if
+                      user.created_at else 'N/A' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+
     <script>
-        document.getElementById('editUserForm').addEventListener('submit', function(event) {
-    let isValid = true;
-    const username = document.getElementById('username').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+      $(document).ready(function () {
+        // Password toggle functionality
+        $(".password-toggle").on("click", function () {
+          const input = $(this).siblings("input");
+          const icon = $(this).find("i");
 
-    // Validate username
-    if (username.trim() === "") {
-        document.getElementById('usernameError').innerText = 'Username is required.';
-        isValid = false;
-    } else if (username.length < 8) {
-        document.getElementById('usernameError').innerText = 'Username must be at least 8 characters long.';
-        isValid = false;
-    } else {
-        document.getElementById('usernameError').innerText = '';
-    }
+          if (input.attr("type") === "password") {
+            input.attr("type", "text");
+            icon.removeClass("fa-eye").addClass("fa-eye-slash");
+          } else {
+            input.attr("type", "password");
+            icon.removeClass("fa-eye-slash").addClass("fa-eye");
+          }
+        });
 
-    // Validate email
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email.trim() === "") {
-        document.getElementById('emailError').innerText = 'Email is required.';
-        isValid = false;
-    } else if (!emailPattern.test(email)) {
-        document.getElementById('emailError').innerText = 'Please enter a valid email address.';
-        isValid = false;
-    } else {
-        document.getElementById('emailError').innerText = '';
-    }
+        // Validation functions (similar to signup)
+        function validateUsername(username) {
+          const usernameRegex = /^[A-Za-z][A-Za-z0-9_]{6,19}$/;
+          return usernameRegex.test(username);
+        }
 
-    // Validate password
-    if (password.length < 5 || password.length > 10) {
-        document.getElementById('passwordError').innerText = 'Password must be between 5 and 10 characters long.';
-        isValid = false;
-    } else {
-        document.getElementById('passwordError').innerText = '';
-    }
+        function validateEmail(email) {
+          const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+          return emailRegex.test(email);
+        }
 
-    if (!isValid) {
-        event.preventDefault();
-    }
-});
+        function validatePassword(password) {
+          if (password === "") return true; // Empty password is allowed (means keep current)
 
+          const passwordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+          return passwordRegex.test(password);
+        }
+
+        function validateConfirmPassword(password, confirmPassword) {
+          if (password === "") return true; // If password is empty, confirmation doesn't matter
+          return password === confirmPassword;
+        }
+
+        // Real-time validation with visual feedback (like signup)
+        $("#username").on("input", function () {
+          const isValid = validateUsername($(this).val());
+          if (isValid) {
+            $(this).removeClass("error-border").addClass("success-border");
+            $("#username-error").hide();
+          } else {
+            $(this).removeClass("success-border").addClass("error-border");
+            $("#username-error").show();
+          }
+        });
+
+        $("#email").on("input", function () {
+          const isValid = validateEmail($(this).val());
+          if (isValid) {
+            $(this).removeClass("error-border").addClass("success-border");
+            $("#email-error").hide();
+          } else {
+            $(this).removeClass("success-border").addClass("error-border");
+            $("#email-error").show();
+          }
+        });
+
+        $("#password").on("input", function () {
+          const isValid = validatePassword($(this).val());
+          if (isValid) {
+            $(this).removeClass("error-border").addClass("success-border");
+            $("#password-error").hide();
+          } else {
+            $(this).removeClass("success-border").addClass("error-border");
+            $("#password-error").show();
+          }
+
+          // Also validate confirm password when password changes
+          const confirmPassword = $("#confirmPassword").val();
+          const confirmValid = validateConfirmPassword(
+            $(this).val(),
+            confirmPassword
+          );
+          if (confirmPassword !== "") {
+            if (confirmValid) {
+              $("#confirmPassword")
+                .removeClass("error-border")
+                .addClass("success-border");
+              $("#confirmPassword-error").hide();
+            } else {
+              $("#confirmPassword")
+                .removeClass("success-border")
+                .addClass("error-border");
+              $("#confirmPassword-error").show();
+            }
+          }
+        });
+
+        $("#confirmPassword").on("input", function () {
+          const password = $("#password").val();
+          const isValid = validateConfirmPassword(password, $(this).val());
+
+          if (isValid) {
+            $(this).removeClass("error-border").addClass("success-border");
+            $("#confirmPassword-error").hide();
+          } else {
+            $(this).removeClass("success-border").addClass("error-border");
+            $("#confirmPassword-error").show();
+          }
+        });
+
+        // Form submission validation
+        $("#editUserForm").on("submit", function (e) {
+          let isValid = true;
+
+          // Validate username
+          const username = $("#username").val();
+          if (!validateUsername(username)) {
+            $("#username").addClass("error-border");
+            $("#username-error").show();
+            isValid = false;
+          }
+
+          // Validate email
+          const email = $("#email").val();
+          if (!validateEmail(email)) {
+            $("#email").addClass("error-border");
+            $("#email-error").show();
+            isValid = false;
+          }
+
+          // Validate password
+          const password = $("#password").val();
+          if (!validatePassword(password)) {
+            $("#password").addClass("error-border");
+            $("#password-error").show();
+            isValid = false;
+          }
+
+          // Validate confirm password
+          const confirmPassword = $("#confirmPassword").val();
+          if (!validateConfirmPassword(password, confirmPassword)) {
+            $("#confirmPassword").addClass("error-border");
+            $("#confirmPassword-error").show();
+            isValid = false;
+          }
+
+          if (!isValid) {
+            e.preventDefault();
+            // Scroll to first error
+            $("html, body").animate(
+              {
+                scrollTop: $(".error-border").first().offset().top - 100,
+              },
+              500
+            );
+          }
+        });
+
+        // Add blur event listeners for real-time validation
+        $("#username, #email, #password, #confirmPassword").on(
+          "blur",
+          function () {
+            $(this).trigger("input");
+          }
+        );
+      });
     </script>
-</body>
+  </body>
 </html>

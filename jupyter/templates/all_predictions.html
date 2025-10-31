@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Predictions - Admin Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .flash-messages {
+        margin: 1rem 0;
+      }
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .flash-messages .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .prediction-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .detail-item {
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+      }
+      .detail-label {
+        font-weight: bold;
+        color: #6c757d;
+      }
+      .detail-value {
+        color: #495057;
+      }
+      .specs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .spec-card {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 5px;
+        border-left: 4px solid #4e73df;
+      }
+      .modal-lg {
+        max-width: 800px;
+      }
+    </style>
+  </head>
+  <body id="page-top">
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="{{ url_for('index') }}"
+        >
+          <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor Admin</div>
+        </a>
+
+        <hr class="sidebar-divider my-0" />
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admindashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+
+        <div class="sidebar-heading">Administration</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('user_list') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('all_predictions') }}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>All Predictions</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_recommendations') }}">
+            <i class="fas fa-fw fa-table"></i>
+            <span>All Recommendations</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_categories') }}">
+            <i class="fas fa-fw fa-layer-group"></i>
+            <span>All Categories</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_bookings') }}">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>All Bookings</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider d-none d-md-block" />
+
+        <div class="text-center d-none d-md-inline">
+          <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+      </ul>
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+          <!-- Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <button
+              id="sidebarToggleTop"
+              class="btn btn-link d-md-none rounded-circle mr-3"
+            >
+              <i class="fa fa-bars"></i>
+            </button>
+
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item dropdown no-arrow">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small"
+                    >Admin</span
+                  >
+                  <img
+                    class="img-profile rounded-circle"
+                    src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
+                  />
+                </a>
+                <div
+                  class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown"
+                >
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Settings
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i
+                      class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
+                    ></i>
+                    Logout
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="container-fluid">
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <ul>
+                {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %} {% endwith %}
+            </div>
+
+            <h1 class="h3 mb-4 text-gray-800">All Predictions</h1>
+
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Predictions History ({{ predictions|length }} total)
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered"
+                    id="dataTable"
+                    width="100%"
+                    cellspacing="0"
+                  >
+                    <thead>
+                      <tr>
+                        <th>Prediction ID</th>
+                        <th>User</th>
+                        <th>Company</th>
+                        <th>Type</th>
+                        <th>RAM</th>
+                        <th>Price</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for prediction in predictions %}
+                      <tr>
+                        <td>{{ prediction.pid }}</td>
+                        <td>{{ prediction.username }}</td>
+                        <td>{{ prediction.company }}</td>
+                        <td>{{ prediction.type }}</td>
+                        <td>{{ prediction.ram }}GB</td>
+                        <td>
+                          ₹{{ "%.2f"|format(prediction.predicted_price) }}
+                        </td>
+                        <td>
+                          {{ prediction.created_at.strftime('%Y-%m-%d %H:%M') if
+                          prediction.created_at else 'N/A' }}
+                        </td>
+                        <td>
+                          <button
+                            class="btn btn-sm btn-info view-prediction"
+                            data-prediction-id="{{ prediction.pid }}"
+                            data-toggle="modal"
+                            data-target="#predictionModal"
+                          >
+                            View
+                          </button>
+                          <a
+                            href="{{ url_for('delete_prediction_admin', pid=prediction.pid) }}"
+                            class="btn btn-sm btn-danger"
+                            onclick="return confirm('Are you sure you want to delete this prediction?')"
+                            >Delete</a
+                          >
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prediction Details Modal -->
+    <div
+      class="modal fade"
+      id="predictionModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="predictionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="predictionModalLabel">
+              Prediction Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="predictionDetails">
+              <!-- Details will be loaded here via JavaScript -->
+              <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+                <p>Loading prediction details...</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+      $(document).ready(function () {
+        // Initialize DataTable
+        $("#dataTable").DataTable({
+          pageLength: 10,
+          lengthMenu: [
+            [10, 25, 50, -1],
+            [10, 25, 50, "All"],
+          ],
+        });
+
+        // Handle view prediction button click
+        $(".view-prediction").on("click", function () {
+          const predictionId = $(this).data("prediction-id");
+          loadPredictionDetails(predictionId);
+        });
+
+        // Function to load prediction details via AJAX
+        function loadPredictionDetails(predictionId) {
+          // Show loading state
+          $("#predictionDetails").html(`
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+              <p>Loading prediction details...</p>
+            </div>
+          `);
+
+          // Fetch prediction details
+          $.ajax({
+            url: "/get_prediction_details/" + predictionId,
+            type: "GET",
+            success: function (response) {
+              if (response.success) {
+                displayPredictionDetails(response.prediction);
+              } else {
+                $("#predictionDetails").html(`
+                  <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading prediction details: ${response.error}
+                  </div>
+                `);
+              }
+            },
+            error: function (xhr, status, error) {
+              $("#predictionDetails").html(`
+                <div class="alert alert-danger">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  Error loading prediction details. Please try again.
+                </div>
+              `);
+            },
+          });
+        }
+
+        // Function to display prediction details in modal
+        function displayPredictionDetails(prediction) {
+          const detailsHtml = `
+            <div class="prediction-details">
+              <div class="specs-grid">
+                <div class="spec-card">
+                  <h6><i class="fas fa-user"></i> User Information</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">Username:</span>
+                    <span class="detail-value">${
+                      prediction.username || "N/A"
+                    }</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Prediction ID:</span>
+                    <span class="detail-value">${prediction.pid}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">${
+                      prediction.created_at || "N/A"
+                    }</span>
+                  </div>
+                </div>
+
+                <div class="spec-card">
+                  <h6><i class="fas fa-laptop"></i> Basic Specifications</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">Company:</span>
+                    <span class="detail-value">${
+                      prediction.company || "N/A"
+                    }</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Type:</span>
+                    <span class="detail-value">${
+                      prediction.type || "N/A"
+                    }</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">RAM:</span>
+                    <span class="detail-value">${
+                      prediction.ram || "N/A"
+                    } GB</span>
+                  </div>
+                </div>
+
+                <div class="spec-card">
+                  <h6><i class="fas fa-microchip"></i> Processor & Graphics</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">CPU:</span>
+                    <span class="detail-value">${prediction.cpu || "N/A"}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">GPU:</span>
+                    <span class="detail-value">${prediction.gpu || "N/A"}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">OS:</span>
+                    <span class="detail-value">${prediction.os || "N/A"}</span>
+                  </div>
+                </div>
+
+                <div class="spec-card">
+                  <h6><i class="fas fa-hdd"></i> Storage & Display</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">SSD:</span>
+                    <span class="detail-value">${
+                      prediction.ssd || "0"
+                    } GB</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">HDD:</span>
+                    <span class="detail-value">${
+                      prediction.hdd || "0"
+                    } GB</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Screen Size:</span>
+                    <span class="detail-value">${
+                      prediction.screen_size || "N/A"
+                    }"</span>
+                  </div>
+                </div>
+
+                <div class="spec-card">
+                  <h6><i class="fas fa-tv"></i> Display Features</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">Resolution:</span>
+                    <span class="detail-value">${
+                      prediction.resolution || "N/A"
+                    }</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Touchscreen:</span>
+                    <span class="detail-value">${
+                      prediction.touchscreen ? "Yes" : "No"
+                    }</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">IPS Display:</span>
+                    <span class="detail-value">${
+                      prediction.ips ? "Yes" : "No"
+                    }</span>
+                  </div>
+                </div>
+
+                <div class="spec-card">
+                  <h6><i class="fas fa-weight"></i> Physical & Price</h6>
+                  <div class="detail-item">
+                    <span class="detail-label">Weight:</span>
+                    <span class="detail-value">${
+                      prediction.weight || "N/A"
+                    } kg</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Predicted Price:</span>
+                    <span class="detail-value" style="font-weight: bold; color: #2e59d9;">
+                      ₹${
+                        prediction.predicted_price
+                          ? parseFloat(prediction.predicted_price).toFixed(2)
+                          : "N/A"
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              ${
+                prediction.additional_notes
+                  ? `
+                <div class="spec-card" style="grid-column: 1 / -1;">
+                  <h6><i class="fas fa-sticky-note"></i> Additional Notes</h6>
+                  <p>${prediction.additional_notes}</p>
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `;
+
+          $("#predictionDetails").html(detailsHtml);
+        }
+
+        // Clear modal content when hidden
+        $("#predictionModal").on("hidden.bs.modal", function () {
+          $("#predictionDetails").html(`
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+              <p>Loading prediction details...</p>
+            </div>
+          `);
+        });
+      });
+    </script>
+  </body>
+</html>

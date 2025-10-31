@@ -3,19 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recommendation History - Laptop Price Predictor</title>
-
-    <!-- SB Admin 2 CSS -->
+    <title>All Recommendations - Admin Dashboard</title>
     <link
       href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
       rel="stylesheet"
     />
-    <!-- Font Awesome -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
       rel="stylesheet"
     />
-    <!-- Custom CSS -->
     <style>
       .flash-messages {
         margin: 1rem 0;
@@ -52,7 +48,7 @@
       }
 
       .prediction-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%);
         color: white;
         padding: 20px;
         font-weight: 600;
@@ -81,9 +77,17 @@
         color: #6c757d;
       }
 
+      .user-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        margin-left: 10px;
+      }
+
       /* Recommendations Table */
       .recommendations-table-header {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        background: linear-gradient(135deg, #858796 0%, #60616f 100%);
         color: white;
         padding: 15px 20px;
         font-weight: 600;
@@ -181,8 +185,8 @@
         justify-content: center;
       }
 
-      .book-btn {
-        background: linear-gradient(45deg, #1cc88a, #13855c);
+      .view-btn {
+        background: linear-gradient(45deg, #4e73df, #224abe);
         border: none;
         color: white;
         padding: 8px 12px;
@@ -193,13 +197,16 @@
         display: flex;
         align-items: center;
         gap: 5px;
-        box-shadow: 0 2px 8px rgba(28, 200, 138, 0.3);
+        box-shadow: 0 2px 8px rgba(78, 115, 223, 0.3);
+        text-decoration: none;
       }
 
-      .book-btn:hover {
+      .view-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(28, 200, 138, 0.4);
-        background: linear-gradient(45deg, #13855c, #0f6b45);
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.4);
+        background: linear-gradient(45deg, #224abe, #1e3a8a);
+        color: white;
+        text-decoration: none;
       }
 
       .delete-btn {
@@ -233,7 +240,7 @@
         font-size: 5rem;
         margin-bottom: 20px;
         opacity: 0.3;
-        color: #4e73df;
+        color: #e74a3b;
       }
 
       .empty-state h3 {
@@ -247,24 +254,17 @@
         margin-bottom: 25px;
       }
 
-      .empty-state .btn {
-        background: linear-gradient(135deg, #4e73df, #224abe);
-        border: none;
-        padding: 12px 25px;
-        font-size: 1rem;
-      }
-
       /* Stats Header */
       .stats-header {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%);
         color: white;
-        padding: 15px 20px;
+        padding: 20px;
         margin-bottom: 25px;
         border-radius: 10px;
         display: flex;
-        justify-content: space-between;
+        justify-content: space-around;
         align-items: center;
-        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.2);
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
       }
 
       .stats-item {
@@ -282,6 +282,94 @@
         opacity: 0.9;
       }
 
+      /* Modal Styles */
+      .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+        font-size: 1.3rem;
+      }
+
+      .modal-body {
+        padding: 25px;
+      }
+
+      .detail-row {
+        display: flex;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e3e6f0;
+      }
+
+      .detail-label {
+        font-weight: 600;
+        color: #495057;
+        width: 180px;
+        flex-shrink: 0;
+      }
+
+      .detail-value {
+        color: #6c757d;
+        flex-grow: 1;
+      }
+
+      .specs-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .specs-list li {
+        padding: 5px 0;
+        border-bottom: 1px solid #f8f9fc;
+      }
+
+      .specs-list li:last-child {
+        border-bottom: none;
+      }
+
+      .modal-footer {
+        border-top: 1px solid #e3e6f0;
+        padding: 15px 25px;
+      }
+
+      /* Loading Spinner Styles */
+      .loading-spinner {
+        text-align: center;
+        padding: 50px 20px;
+      }
+
+      .loading-spinner i {
+        font-size: 3rem;
+        color: #4e73df;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .loading-spinner p {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin: 0;
+      }
+
+      .spinner-text {
+        margin-top: 15px;
+        font-size: 0.9rem;
+        color: #858796;
+      }
+
       /* Responsive Design */
       @media (max-width: 992px) {
         .recommendations-table-header,
@@ -297,7 +385,7 @@
 
         .recommendation-item {
           padding: 20px;
-          border-left: 4px solid #4e73df;
+          border-left: 4px solid #e74a3b;
         }
 
         .laptop-info {
@@ -339,17 +427,21 @@
           font-weight: 600;
           color: #495057;
         }
+
+        .detail-row {
+          flex-direction: column;
+        }
+
+        .detail-label {
+          width: 100%;
+          margin-bottom: 5px;
+        }
       }
 
       @media (max-width: 768px) {
         .stats-header {
           flex-direction: column;
           gap: 15px;
-        }
-
-        .stats-header > div {
-          display: flex;
-          gap: 30px;
         }
 
         .prediction-header {
@@ -361,14 +453,12 @@
     </style>
   </head>
   <body id="page-top">
-    <!-- Page Wrapper -->
     <div id="wrapper">
       <!-- Sidebar -->
       <ul
-        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
         id="accordionSidebar"
       >
-        <!-- Sidebar - Brand -->
         <a
           class="sidebar-brand d-flex align-items-center justify-content-center"
           href="{{ url_for('index') }}"
@@ -376,77 +466,68 @@
           <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-laptop"></i>
           </div>
-          <div class="sidebar-brand-text mx-3">Laptop Predictor</div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor Admin</div>
         </a>
 
-        <!-- Divider -->
         <hr class="sidebar-divider my-0" />
 
-        <!-- Nav Item - Dashboard -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('dashboard') }}">
+          <a class="nav-link" href="{{ url_for('admindashboard') }}">
             <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Dashboard</span></a
-          >
+            <span>Dashboard</span>
+          </a>
         </li>
 
-        <!-- Divider -->
         <hr class="sidebar-divider" />
 
-        <!-- Heading -->
-        <div class="sidebar-heading">User Features</div>
+        <div class="sidebar-heading">Administration</div>
 
-        <!-- Nav Item - Predictions -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('prediction_history') }}">
+          <a class="nav-link" href="{{ url_for('user_list') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_predictions') }}">
             <i class="fas fa-fw fa-chart-area"></i>
-            <span>Prediction History</span></a
-          >
+            <span>All Predictions</span>
+          </a>
         </li>
 
-        <!-- Nav Item - Recommendations -->
         <li class="nav-item active">
-          <a class="nav-link" href="{{ url_for('recommendation_history') }}">
+          <a class="nav-link" href="{{ url_for('all_recommendations') }}">
             <i class="fas fa-fw fa-table"></i>
-            <span>Recommendation History</span></a
-          >
+            <span>All Recommendations</span>
+          </a>
         </li>
-
-        <!-- Nav Item - Category History -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('category_history') }}">
+          <a class="nav-link" href="{{ url_for('all_categories') }}">
             <i class="fas fa-fw fa-layer-group"></i>
-            <span>Category History</span></a
-          >
+            <span>All Categories</span>
+          </a>
         </li>
-
-        <!-- Nav Item - Bookings -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('booking_history') }}">
+          <a class="nav-link" href="{{ url_for('all_bookings') }}">
             <i class="fas fa-fw fa-shopping-cart"></i>
-            <span>Booking History</span></a
-          >
+            <span>All Bookings</span>
+          </a>
         </li>
 
-        <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block" />
 
-        <!-- Sidebar Toggle (Sidebar) -->
         <div class="text-center d-none d-md-inline">
           <button class="rounded-circle border-0" id="sidebarToggle"></button>
         </div>
       </ul>
-      <!-- End of Sidebar -->
 
-      <!-- Content Wrapper -->
       <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
         <div id="content">
           <!-- Topbar -->
           <nav
             class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
           >
-            <!-- Sidebar Toggle (Topbar) -->
             <button
               id="sidebarToggleTop"
               class="btn btn-link d-md-none rounded-circle mr-3"
@@ -454,9 +535,7 @@
               <i class="fa fa-bars"></i>
             </button>
 
-            <!-- Topbar Navbar -->
             <ul class="navbar-nav ml-auto">
-              <!-- Nav Item - User Information -->
               <li class="nav-item dropdown no-arrow">
                 <a
                   class="nav-link dropdown-toggle"
@@ -468,14 +547,13 @@
                   aria-expanded="false"
                 >
                   <span class="mr-2 d-none d-lg-inline text-gray-600 small"
-                    >{{ username | default('User') }}</span
+                    >Admin</span
                   >
                   <img
                     class="img-profile rounded-circle"
                     src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
                   />
                 </a>
-                <!-- Dropdown - User Information -->
                 <div
                   class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                   aria-labelledby="userDropdown"
@@ -499,17 +577,8 @@
               </li>
             </ul>
           </nav>
-          <!-- End of Topbar -->
 
-          <!-- Begin Page Content -->
           <div class="container-fluid">
-            <!-- Page Heading -->
-            <div
-              class="d-sm-flex align-items-center justify-content-between mb-4"
-            >
-              <h1 class="h3 mb-0 text-gray-800">Recommendation History</h1>
-            </div>
-
             <!-- Flash Messages -->
             <div class="flash-messages">
               {% with messages = get_flashed_messages(with_categories=true) %}
@@ -522,6 +591,13 @@
               {% endif %} {% endwith %}
             </div>
 
+            <!-- Page Heading -->
+            <div
+              class="d-sm-flex align-items-center justify-content-between mb-4"
+            >
+              <h1 class="h3 mb-0 text-gray-800">All Recommendations</h1>
+            </div>
+
             <!-- Recommendations -->
             {% if prediction_groups %}
 
@@ -532,6 +608,10 @@
                 <span class="stats-label">Total Recommendations</span>
               </div>
               <div class="stats-item">
+                <span class="stats-number">{{ total_users }}</span>
+                <span class="stats-label">Active Users</span>
+              </div>
+              <div class="stats-item">
                 <span class="stats-number">{{ average_match }}%</span>
                 <span class="stats-label">Average Match</span>
               </div>
@@ -539,7 +619,7 @@
                 <span class="stats-number"
                   >₹{{ "%.0f" | format(best_price) }}</span
                 >
-                <span class="stats-label">Best Price</span>
+                <span class="stats-label">Best Price Found</span>
               </div>
             </div>
 
@@ -548,8 +628,11 @@
             <div class="prediction-group">
               <div class="prediction-header">
                 <div class="prediction-title">
-                  <i class="fas fa-bolt"></i>
-                  Prediction Session - {{ group.search_criteria }}
+                  <i class="fas fa-user"></i>
+                  {{ group.username }}
+                  <span class="user-badge">
+                    <i class="fas fa-bolt"></i> {{ group.search_criteria }}
+                  </span>
                 </div>
                 <div class="prediction-date">
                   <i class="fas fa-calendar-alt"></i>
@@ -559,10 +642,12 @@
               </div>
 
               <div class="prediction-details">
+                <strong>User:</strong> {{ group.username }} |
                 <strong>Search:</strong> {{ group.search_criteria }} |
                 <strong>Predicted Price:</strong> ₹{{ "%.2f" |
                 format(group.predicted_price) if group.predicted_price else
-                'N/A' }}
+                'N/A' }} | <strong>Recommendations:</strong> {{
+                group.recommendations|length }}
               </div>
 
               <!-- Recommendations Table -->
@@ -610,26 +695,31 @@
 
                 <!-- Actions -->
                 <div class="action-buttons">
-                  <form
-                    action="{{ url_for('book_recommendation', rid=recommendation.rid) }}"
-                    method="POST"
-                    style="display: inline"
-                    onsubmit="return confirm('Are you sure you want to book this laptop?');"
+                  <a
+                    href="#"
+                    class="view-btn"
+                    onclick="viewDetails(this)"
+                    data-rid="{{ recommendation.rid }}"
+                    data-laptop-name="{{ recommendation.laptop_name }}"
+                    data-specs="{{ recommendation.specs }}"
+                    data-price="{{ recommendation.price }}"
+                    data-similarity="{{ recommendation.similarity_score }}"
+                    data-saved-at="{{ recommendation.saved_at.strftime('%b %d, %Y at %I:%M %p') }}"
+                    data-username="{{ group.username }}"
+                    data-search-criteria="{{ group.search_criteria }}"
+                    data-predicted-price="{{ group.predicted_price }}"
+                    data-toggle="modal"
+                    data-target="#recommendationModal"
                   >
-                    <button type="submit" class="book-btn">
-                      <i class="fas fa-shopping-cart"></i> Book
-                    </button>
-                  </form>
-                  <form
-                    action="{{ url_for('delete_recommendation', rid=recommendation.rid) }}"
-                    method="POST"
-                    style="display: inline"
-                    onsubmit="return confirm('Are you sure you want to delete this recommendation?');"
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  <a
+                    href="{{ url_for('delete_recommendation_admin', rid=recommendation.rid) }}"
+                    class="delete-btn"
+                    onclick="return confirm('Are you sure you want to delete this recommendation?')"
                   >
-                    <button type="submit" class="delete-btn">
-                      <i class="fas fa-trash"></i> Delete
-                    </button>
-                  </form>
+                    <i class="fas fa-trash"></i> Delete
+                  </a>
                 </div>
               </div>
               {% endfor %}
@@ -639,38 +729,157 @@
             <div class="prediction-group">
               <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
-                <h3>No Saved Recommendations</h3>
-                <p>You haven't saved any laptop recommendations yet.</p>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-                  <i class="fas fa-search"></i> Find Recommendations
-                </a>
+                <h3>No Recommendations Found</h3>
+                <p>There are no saved recommendations in the system yet.</p>
               </div>
             </div>
             {% endif %}
           </div>
-          <!-- /.container-fluid -->
         </div>
-        <!-- End of Main Content -->
-
-        <!-- Footer -->
-        <footer class="sticky-footer bg-white">
-          <div class="container my-auto">
-            <div class="copyright text-center my-auto">
-              <span>Copyright &copy; Laptop Price Predictor 2025</span>
-            </div>
-          </div>
-        </footer>
-        <!-- End of Footer -->
       </div>
-      <!-- End of Content Wrapper -->
     </div>
-    <!-- End of Page Wrapper -->
 
-    <!-- Bootstrap core JavaScript-->
+    <!-- Recommendation Details Modal -->
+    <div
+      class="modal fade"
+      id="recommendationModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="recommendationModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="recommendationModalLabel">
+              Recommendation Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true" style="color: white">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="modalBody">
+            <!-- Loading content will be shown here initially -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-
-    <!-- SB Admin 2 JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+
+    <script>
+      function viewDetails(button) {
+        // Show loading spinner immediately
+        $("#modalBody").html(`
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading recommendation details...</p>
+            <div class="spinner-text">Please wait while we prepare the information</div>
+          </div>
+        `);
+
+        // Get data from the button's data attributes
+        const rid = button.getAttribute("data-rid");
+        const laptopName = button.getAttribute("data-laptop-name");
+        const specs = button.getAttribute("data-specs");
+        const price = button.getAttribute("data-price");
+        const similarity = button.getAttribute("data-similarity");
+        const savedAt = button.getAttribute("data-saved-at");
+        const username = button.getAttribute("data-username");
+        const searchCriteria = button.getAttribute("data-search-criteria");
+        const predictedPrice = button.getAttribute("data-predicted-price");
+
+        // Simulate a small delay to show the loading spinner (you can remove this in production)
+        setTimeout(() => {
+          // Format the similarity score as percentage
+          const similarityPercent = (parseFloat(similarity) * 100).toFixed(0);
+
+          // Populate the modal with the actual data
+          $("#modalBody").html(`
+            <div class="detail-row">
+              <div class="detail-label">Recommendation ID:</div>
+              <div class="detail-value">${rid}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">User:</div>
+              <div class="detail-value">${username}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Search Criteria:</div>
+              <div class="detail-value">${searchCriteria}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Predicted Price:</div>
+              <div class="detail-value">₹${parseFloat(predictedPrice).toFixed(
+                2
+              )}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Laptop Name:</div>
+              <div class="detail-value"><strong>${laptopName}</strong></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Price:</div>
+              <div class="detail-value" style="font-size: 1.2rem; font-weight: bold; color: #e74c3c;">
+                ₹${parseFloat(price).toFixed(2)}
+              </div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Match Score:</div>
+              <div class="detail-value">
+                <span class="similarity-badge">${similarityPercent}% Match</span>
+              </div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Saved Date:</div>
+              <div class="detail-value">${savedAt}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Specifications:</div>
+              <div class="detail-value">
+                <div style="background: #f8f9fc; padding: 15px; border-radius: 8px; border-left: 4px solid #4e73df;">
+                  ${specs}
+                </div>
+              </div>
+            </div>
+          `);
+        }, 800); // 800ms delay to show loading spinner
+      }
+
+      // Show loading spinner when modal is about to be shown
+      $("#recommendationModal").on("show.bs.modal", function () {
+        // This ensures loading spinner is shown even if viewDetails hasn't been called yet
+        if ($("#modalBody").is(":empty")) {
+          $("#modalBody").html(`
+            <div class="loading-spinner">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Loading recommendation details...</p>
+              <div class="spinner-text">Please wait while we prepare the information</div>
+            </div>
+          `);
+        }
+      });
+
+      // Reset modal content when it's closed
+      $("#recommendationModal").on("hidden.bs.modal", function () {
+        $("#modalBody").html("");
+      });
+    </script>
   </body>
 </html>

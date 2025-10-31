@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Bookings - Admin Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .flash-messages {
+        margin: 1rem 0;
+      }
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .flash-messages .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .status-dropdown {
+        min-width: 140px;
+      }
+
+      .status-confirmed {
+        background-color: #1cc88a;
+        color: white;
+        border: none;
+      }
+
+      .status-pending {
+        background-color: #f6c23e;
+        color: white;
+        border: none;
+      }
+
+      .status-cancelled {
+        background-color: #e74a3b;
+        color: white;
+        border: none;
+      }
+
+      .status-completed {
+        background-color: #36b9cc;
+        color: white;
+        border: none;
+      }
+
+      .booking-type-badge {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .stats-card {
+        transition: transform 0.3s ease;
+      }
+
+      .stats-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .filter-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .filter-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid #e3e6f0;
+        background: white;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+      }
+
+      .filter-btn.active {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        border-color: #4e73df;
+      }
+
+      .filter-btn:hover:not(.active) {
+        background: #f8f9fc;
+        border-color: #4e73df;
+        color: #4e73df;
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 20px;
+        padding: 8px 15px;
+        border: 1px solid #e3e6f0;
+        width: 250px;
+      }
+
+      .search-box input {
+        border: none;
+        outline: none;
+        width: 100%;
+        padding: 0 10px;
+      }
+    </style>
+  </head>
+  <body id="page-top">
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="{{ url_for('index') }}"
+        >
+          <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor Admin</div>
+        </a>
+
+        <hr class="sidebar-divider my-0" />
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admindashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+
+        <div class="sidebar-heading">Administration</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('user_list') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_predictions') }}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>All Predictions</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_recommendations') }}">
+            <i class="fas fa-fw fa-table"></i>
+            <span>All Recommendations</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_categories') }}">
+            <i class="fas fa-fw fa-layer-group"></i>
+            <span>All Categories</span>
+          </a>
+        </li>
+
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('all_bookings') }}">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>All Bookings</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider d-none d-md-block" />
+
+        <div class="text-center d-none d-md-inline">
+          <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+      </ul>
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+          <!-- Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <button
+              id="sidebarToggleTop"
+              class="btn btn-link d-md-none rounded-circle mr-3"
+            >
+              <i class="fa fa-bars"></i>
+            </button>
+
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item dropdown no-arrow">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small"
+                    >Admin</span
+                  >
+                  <img
+                    class="img-profile rounded-circle"
+                    src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
+                  />
+                </a>
+                <div
+                  class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown"
+                >
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Settings
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i
+                      class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
+                    ></i>
+                    Logout
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="container-fluid">
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <ul>
+                {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %} {% endwith %}
+            </div>
+
+            <h1 class="h3 mb-4 text-gray-800">All Bookings</h1>
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div
+                  class="card border-left-primary shadow h-100 py-2 stats-card"
+                >
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                        >
+                          Total Bookings
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ bookings|length }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div
+                  class="card border-left-success shadow h-100 py-2 stats-card"
+                >
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                        >
+                          Confirmed
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ confirmed_count }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2 stats-card">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                        >
+                          Completed
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ completed_count }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-check-double fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div
+                  class="card border-left-warning shadow h-100 py-2 stats-card"
+                >
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+                        >
+                          Pending
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ pending_count }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div
+                  class="card border-left-danger shadow h-100 py-2 stats-card"
+                >
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+                        >
+                          Cancelled
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          {{ cancelled_count }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xl-3 col-md-6 mb-4">
+                <div
+                  class="card border-left-secondary shadow h-100 py-2 stats-card"
+                >
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-secondary text-uppercase mb-1"
+                        >
+                          Total Value
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                          ₹{{ "%.0f" | format(total_value) }}
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="confirmed">
+                  Confirmed
+                </button>
+                <button class="filter-btn" data-filter="completed">
+                  Completed
+                </button>
+                <button class="filter-btn" data-filter="pending">
+                  Pending
+                </button>
+                <button class="filter-btn" data-filter="cancelled">
+                  Cancelled
+                </button>
+              </div>
+              <div class="search-box">
+                <i class="fas fa-search text-gray-400"></i>
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Search bookings..."
+                />
+              </div>
+            </div>
+
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Booking History ({{ bookings|length }} total)
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered"
+                    id="dataTable"
+                    width="100%"
+                    cellspacing="0"
+                  >
+                    <thead>
+                      <tr>
+                        <th>Booking ID</th>
+                        <th>User</th>
+                        <th>Laptop Name</th>
+                        <th>Specifications</th>
+                        <th>Price</th>
+                        <th>Booking Type</th>
+                        <th>Booking Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for booking in bookings %}
+                      <tr
+                        class="booking-row"
+                        data-status="{{ booking.booking_status }}"
+                      >
+                        <td>#{{ booking.bid }}</td>
+                        <td>{{ booking.username }}</td>
+                        <td>{{ booking.laptop_name }}</td>
+                        <td>{{ booking.specs[:80] }}...</td>
+                        <td>
+                          ₹{{ "%.2f"|format(booking.price) if booking.price else
+                          '0.00' }}
+                        </td>
+                        <td>
+                          <span class="booking-type-badge">
+                            {{ booking.booking_type|title if
+                            booking.booking_type else 'Standard' }}
+                          </span>
+                        </td>
+                        <td>
+                          {{ booking.booked_at.strftime('%Y-%m-%d %H:%M') if
+                          booking.booked_at else 'N/A' }}
+                        </td>
+                        <td>
+                          <div class="dropdown">
+                            <button
+                              class="btn btn-sm dropdown-toggle status-dropdown {% if booking.booking_status == 'confirmed' %}status-confirmed {% elif booking.booking_status == 'pending' %}status-pending {% elif booking.booking_status == 'cancelled' %}status-cancelled {% elif booking.booking_status == 'completed' %}status-completed {% else %}status-pending{% endif %}"
+                              type="button"
+                              id="statusDropdown{{ booking.bid }}"
+                              data-toggle="dropdown"
+                              aria-haspopup="true"
+                              aria-expanded="false"
+                            >
+                              {{ booking.booking_status|title if
+                              booking.booking_status else 'Pending' }}
+                            </button>
+                            <div
+                              class="dropdown-menu"
+                              aria-labelledby="statusDropdown{{ booking.bid }}"
+                            >
+                              <form
+                                action="{{ url_for('update_booking_status', bid=booking.bid) }}"
+                                method="POST"
+                                class="d-inline"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="status"
+                                  value="pending"
+                                />
+                                <button
+                                  type="submit"
+                                  class="dropdown-item status-pending"
+                                >
+                                  <i class="fas fa-clock mr-2"></i>Pending
+                                </button>
+                              </form>
+                              <form
+                                action="{{ url_for('update_booking_status', bid=booking.bid) }}"
+                                method="POST"
+                                class="d-inline"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="status"
+                                  value="confirmed"
+                                />
+                                <button
+                                  type="submit"
+                                  class="dropdown-item status-confirmed"
+                                >
+                                  <i class="fas fa-check mr-2"></i>Confirmed
+                                </button>
+                              </form>
+                              <form
+                                action="{{ url_for('update_booking_status', bid=booking.bid) }}"
+                                method="POST"
+                                class="d-inline"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="status"
+                                  value="completed"
+                                />
+                                <button
+                                  type="submit"
+                                  class="dropdown-item status-completed"
+                                >
+                                  <i class="fas fa-check-double mr-2"></i
+                                  >Completed
+                                </button>
+                              </form>
+                              <form
+                                action="{{ url_for('update_booking_status', bid=booking.bid) }}"
+                                method="POST"
+                                class="d-inline"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="status"
+                                  value="cancelled"
+                                />
+                                <button
+                                  type="submit"
+                                  class="dropdown-item status-cancelled"
+                                >
+                                  <i class="fas fa-times mr-2"></i>Cancelled
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="btn-group" role="group">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-info"
+                              data-toggle="modal"
+                              data-target="#bookingModal{{ booking.bid }}"
+                            >
+                              <i class="fas fa-eye"></i>
+                            </button>
+                            <a
+                              href="{{ url_for('delete_booking_admin', bid=booking.bid) }}"
+                              class="btn btn-sm btn-danger"
+                              onclick="return confirm('Are you sure you want to delete this booking?')"
+                            >
+                              <i class="fas fa-trash"></i>
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Booking Details Modal -->
+                      <div
+                        class="modal fade"
+                        id="bookingModal{{ booking.bid }}"
+                        tabindex="-1"
+                        role="dialog"
+                        aria-labelledby="bookingModalLabel{{ booking.bid }}"
+                        aria-hidden="true"
+                      >
+                        <div class="modal-dialog modal-lg" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5
+                                class="modal-title"
+                                id="bookingModalLabel{{ booking.bid }}"
+                              >
+                                <i class="fas fa-shopping-cart"></i>
+                                Booking Details #{{ booking.bid }}
+                              </h5>
+                              <button
+                                type="button"
+                                class="close"
+                                data-dismiss="modal"
+                                aria-label="Close"
+                              >
+                                <span aria-hidden="true">&times;</span>
+                              </button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="row">
+                                <div class="col-md-6">
+                                  <h6>Booking Information</h6>
+                                  <p>
+                                    <strong>Booking ID:</strong> #{{ booking.bid
+                                    }}
+                                  </p>
+                                  <p>
+                                    <strong>User:</strong> {{ booking.username
+                                    }}
+                                  </p>
+                                  <p>
+                                    <strong>Booking Type:</strong> {{
+                                    booking.booking_type|title if
+                                    booking.booking_type else 'Standard' }}
+                                  </p>
+                                  <p>
+                                    <strong>Status:</strong>
+                                    <span
+                                      class="badge {% if booking.booking_status == 'confirmed' %}badge-success {% elif booking.booking_status == 'pending' %}badge-warning {% elif booking.booking_status == 'cancelled' %}badge-danger {% elif booking.booking_status == 'completed' %}badge-info {% else %}badge-secondary{% endif %}"
+                                    >
+                                      {{ booking.booking_status|title if
+                                      booking.booking_status else 'Pending' }}
+                                    </span>
+                                  </p>
+                                </div>
+                                <div class="col-md-6">
+                                  <h6>Price & Date</h6>
+                                  <p>
+                                    <strong>Price:</strong> ₹{{
+                                    "%.2f"|format(booking.price) if
+                                    booking.price else '0.00' }}
+                                  </p>
+                                  <p>
+                                    <strong>Booked At:</strong> {{
+                                    booking.booked_at.strftime('%Y-%m-%d %H:%M')
+                                    if booking.booked_at else 'N/A' }}
+                                  </p>
+                                  <p>
+                                    <strong>Last Updated:</strong> {{
+                                    booking.updated_at.strftime('%Y-%m-%d
+                                    %H:%M') if booking.updated_at else 'N/A' }}
+                                  </p>
+                                </div>
+                              </div>
+                              <hr />
+                              <div class="row">
+                                <div class="col-12">
+                                  <h6>Laptop Details</h6>
+                                  <p>
+                                    <strong>Laptop Name:</strong> {{
+                                    booking.laptop_name }}
+                                  </p>
+                                  <p>
+                                    <strong>Specifications:</strong> {{
+                                    booking.specs }}
+                                  </p>
+                                  {% if booking.rid %}
+                                  <p>
+                                    <strong>Recommendation ID:</strong> {{
+                                    booking.rid }}
+                                  </p>
+                                  {% endif %}
+                                </div>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button
+                                type="button"
+                                class="btn btn-secondary"
+                                data-dismiss="modal"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+      $(document).ready(function () {
+        console.log("Booking History Page Loaded");
+
+        // Debug: Log all booking statuses
+        $(".booking-item").each(function () {
+          const status = $(this).data("status");
+          const bid = $(this).find(".laptop-name").text();
+          console.log(`Booking: ${bid}, Status: ${status}`);
+        });
+
+        // Filter functionality
+        $(".filter-btn").on("click", function () {
+          const filter = $(this).data("filter");
+          console.log("Filter clicked:", filter);
+
+          // Update active button
+          $(".filter-btn").removeClass("active");
+          $(this).addClass("active");
+
+          // Show/hide bookings based on filter
+          if (filter === "all") {
+            $(".booking-item").show();
+            console.log("Showing all bookings");
+          } else {
+            $(".booking-item").hide();
+            const visibleItems = $(`.booking-item[data-status="${filter}"]`);
+            visibleItems.show();
+            console.log(
+              `Showing ${visibleItems.length} bookings with status: ${filter}`
+            );
+
+            // If no items found, show a message
+            if (visibleItems.length === 0) {
+              console.log(`No bookings found with status: ${filter}`);
+            }
+          }
+        });
+
+        // Search functionality
+        $("#searchInput").on("keyup", function () {
+          const searchTerm = $(this).val().toLowerCase();
+          console.log("Searching for:", searchTerm);
+
+          $(".booking-item").each(function () {
+            const laptopName = $(this)
+              .find(".laptop-name")
+              .text()
+              .toLowerCase();
+            const laptopSpecs = $(this)
+              .find(".laptop-specs")
+              .text()
+              .toLowerCase();
+
+            if (
+              laptopName.includes(searchTerm) ||
+              laptopSpecs.includes(searchTerm)
+            ) {
+              $(this).show();
+            } else {
+              $(this).hide();
+            }
+          });
+        });
+
+        // Make sure all bookings are visible initially
+        $(".booking-item").show();
+      });
+    </script>
+  </body>
+</html>

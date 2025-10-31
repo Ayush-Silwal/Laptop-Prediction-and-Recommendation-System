@@ -1,0 +1,65 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Custom CSS for .card-counter, etc. */
+    </style>
+  </head>
+  <body id="page-top">
+    <div id="wrapper">
+      <!-- SB Admin 2 Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar content -->
+      </ul>
+      <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+          <!-- SB Admin 2 Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <!-- Topbar content -->
+          </nav>
+          <div class="container-fluid">{% block content %}{% endblock %}</div>
+        </div>
+        <!-- SB Admin 2 Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span>Copyright &copy; Laptop Price Predictor 2023</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <!-- SB Admin 2 JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#dataTable").DataTable();
+      });
+    </script>
+  </body>
+</html>

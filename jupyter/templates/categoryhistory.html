@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recommendation History - Laptop Price Predictor</title>
+    <title>Category History - Laptop Price Predictor</title>
 
     <!-- SB Admin 2 CSS -->
     <link
@@ -41,8 +41,8 @@
         border: 1px solid #f5c6cb;
       }
 
-      /* Prediction Group Styles */
-      .prediction-group {
+      /* Category Grouping Styles */
+      .categories-container {
         background: white;
         border-radius: 12px;
         overflow: hidden;
@@ -51,7 +51,7 @@
         margin-bottom: 30px;
       }
 
-      .prediction-header {
+      .category-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 20px;
@@ -59,165 +59,180 @@
         font-size: 1.1rem;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-      }
-
-      .prediction-title {
-        display: flex;
-        align-items: center;
         gap: 10px;
       }
 
-      .prediction-date {
-        font-size: 0.9rem;
-        opacity: 0.9;
+      .category-header i {
+        font-size: 1.3rem;
       }
 
-      .prediction-details {
-        padding: 15px 20px;
-        background: #f8f9fc;
+      .category-item {
+        padding: 25px;
         border-bottom: 1px solid #e3e6f0;
-        font-size: 0.9rem;
-        color: #6c757d;
-      }
-
-      /* Recommendations Table */
-      .recommendations-table-header {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-        color: white;
-        padding: 15px 20px;
-        font-weight: 600;
-        display: grid;
-        grid-template-columns: 2fr 1.2fr 0.8fr 1fr auto;
-        gap: 20px;
-        align-items: center;
-      }
-
-      .recommendation-item {
-        display: grid;
-        grid-template-columns: 2fr 1.2fr 0.8fr 1fr auto;
-        gap: 20px;
-        padding: 20px;
-        border-bottom: 1px solid #e3e6f0;
-        align-items: center;
         transition: all 0.3s ease;
       }
 
-      .recommendation-item:hover {
+      .category-item:hover {
         background-color: #f8f9fc;
-        transform: translateX(5px);
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       }
 
-      .recommendation-item:last-child {
+      .category-item:last-child {
         border-bottom: none;
       }
 
-      .laptop-info {
+      .category-title-section {
         display: flex;
-        flex-direction: column;
-        gap: 5px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
       }
 
-      .laptop-name {
+      .category-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+      }
+
+      .category-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+      }
+
+      .category-description {
+        color: #6c757d;
+        font-size: 1rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+
+      .category-examples {
+        background: #f8f9fc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .category-examples h4 {
+        color: #4e73df;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .example-laptops-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+      }
+
+      .example-laptop-card {
+        background: white;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .example-laptop-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: #4e73df;
+      }
+
+      .example-laptop-title {
         font-weight: 600;
         color: #2c3e50;
-        font-size: 1.1rem;
-        margin: 0;
-        line-height: 1.3;
+        margin-bottom: 10px;
+        font-size: 1rem;
       }
 
-      .laptop-specs {
-        color: #6c757d;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+      .example-laptop-specs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        font-size: 0.85rem;
       }
 
-      .price-info {
-        text-align: center;
-      }
-
-      .price-value {
-        font-weight: bold;
-        color: #e74c3c;
-        font-size: 1.2rem;
-        margin: 0;
-      }
-
-      .similarity-info {
-        text-align: center;
-      }
-
-      .similarity-badge {
-        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: inline-block;
-        min-width: 65px;
-        box-shadow: 0 2px 8px rgba(28, 200, 138, 0.3);
-      }
-
-      .date-info {
-        text-align: center;
+      .spec-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
         color: #6c757d;
       }
 
-      .date-value {
-        font-size: 0.9rem;
+      .spec-item i {
+        width: 12px;
+        color: #4e73df;
+      }
+
+      .spec-value {
+        color: #495057;
         font-weight: 500;
       }
 
-      .action-buttons {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
+      .example-laptop-price {
+        text-align: right;
+        margin-top: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #e74c3c;
       }
 
-      .book-btn {
+      .laptop-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+        gap: 8px;
+      }
+
+      .book-laptop-btn {
         background: linear-gradient(45deg, #1cc88a, #13855c);
         border: none;
         color: white;
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 6px 12px;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         display: flex;
         align-items: center;
         gap: 5px;
         box-shadow: 0 2px 8px rgba(28, 200, 138, 0.3);
       }
 
-      .book-btn:hover {
+      .book-laptop-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(28, 200, 138, 0.4);
         background: linear-gradient(45deg, #13855c, #0f6b45);
       }
 
-      .delete-btn {
+      .category-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .delete-category-btn {
         background: linear-gradient(45deg, #e74c3c, #c0392b);
         border: none;
         color: white;
-        padding: 8px 12px;
+        padding: 12px 20px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 0.9rem;
+        font-size: 1rem;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
         box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
       }
 
-      .delete-btn:hover {
+      .delete-category-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
         background: linear-gradient(45deg, #c0392b, #a93226);
@@ -283,65 +298,25 @@
       }
 
       /* Responsive Design */
-      @media (max-width: 992px) {
-        .recommendations-table-header,
-        .recommendation-item {
-          grid-template-columns: 1fr;
-          gap: 15px;
-          text-align: left;
-        }
-
-        .recommendations-table-header {
-          display: none;
-        }
-
-        .recommendation-item {
-          padding: 20px;
-          border-left: 4px solid #4e73df;
-        }
-
-        .laptop-info {
-          order: 1;
-        }
-
-        .price-info,
-        .similarity-info,
-        .date-info {
-          text-align: left;
-        }
-
-        .similarity-badge {
-          display: inline-block;
-          margin-right: 10px;
-        }
-
-        .action-buttons {
-          justify-content: flex-start;
-          margin-top: 10px;
-        }
-
-        .price-info::before {
-          content: "Price: ";
-          font-weight: 600;
-          color: #495057;
-        }
-
-        .similarity-info::before {
-          content: "Match: ";
-          font-weight: 600;
-          color: #495057;
-          display: block;
-          margin-bottom: 5px;
-        }
-
-        .date-info::before {
-          content: "Saved: ";
-          font-weight: 600;
-          color: #495057;
-        }
-      }
-
       @media (max-width: 768px) {
+        .category-title-section {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .example-laptops-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .example-laptop-specs {
+          grid-template-columns: 1fr;
+        }
+
+        .category-actions {
+          justify-content: center;
+        }
+
         .stats-header {
           flex-direction: column;
           gap: 15px;
@@ -350,12 +325,6 @@
         .stats-header > div {
           display: flex;
           gap: 30px;
-        }
-
-        .prediction-header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 10px;
         }
       }
     </style>
@@ -405,7 +374,7 @@
         </li>
 
         <!-- Nav Item - Recommendations -->
-        <li class="nav-item active">
+        <li class="nav-item">
           <a class="nav-link" href="{{ url_for('recommendation_history') }}">
             <i class="fas fa-fw fa-table"></i>
             <span>Recommendation History</span></a
@@ -413,7 +382,7 @@
         </li>
 
         <!-- Nav Item - Category History -->
-        <li class="nav-item">
+        <li class="nav-item active">
           <a class="nav-link" href="{{ url_for('category_history') }}">
             <i class="fas fa-fw fa-layer-group"></i>
             <span>Category History</span></a
@@ -507,7 +476,7 @@
             <div
               class="d-sm-flex align-items-center justify-content-between mb-4"
             >
-              <h1 class="h3 mb-0 text-gray-800">Recommendation History</h1>
+              <h1 class="h3 mb-0 text-gray-800">Category History</h1>
             </div>
 
             <!-- Flash Messages -->
@@ -522,127 +491,177 @@
               {% endif %} {% endwith %}
             </div>
 
-            <!-- Recommendations -->
-            {% if prediction_groups %}
+            <!-- Categories -->
+            {% if categories %}
 
             <!-- Stats Header -->
             <div class="stats-header">
               <div class="stats-item">
-                <span class="stats-number">{{ total_recommendations }}</span>
-                <span class="stats-label">Total Recommendations</span>
+                <span class="stats-number">{{ categories|length }}</span>
+                <span class="stats-label">Total Categories</span>
               </div>
               <div class="stats-item">
-                <span class="stats-number">{{ average_match }}%</span>
-                <span class="stats-label">Average Match</span>
+                <span class="stats-number">{{ unique_clusters|length }}</span>
+                <span class="stats-label">Unique Clusters</span>
               </div>
               <div class="stats-item">
-                <span class="stats-number"
-                  >₹{{ "%.0f" | format(best_price) }}</span
-                >
-                <span class="stats-label">Best Price</span>
+                <span class="stats-number">{{ total_examples }}</span>
+                <span class="stats-label">Total Laptops</span>
               </div>
             </div>
 
-            <!-- Prediction Groups -->
-            {% for group in prediction_groups %}
-            <div class="prediction-group">
-              <div class="prediction-header">
-                <div class="prediction-title">
-                  <i class="fas fa-bolt"></i>
-                  Prediction Session - {{ group.search_criteria }}
-                </div>
-                <div class="prediction-date">
-                  <i class="fas fa-calendar-alt"></i>
-                  {{ group.prediction_date.strftime('%b %d, %Y at %I:%M %p') if
-                  group.prediction_date else 'Unknown date' }}
-                </div>
+            <!-- Categories List -->
+            <div class="categories-container">
+              <div class="category-header">
+                <i class="fas fa-layer-group"></i>
+                Your Saved Categories
               </div>
 
-              <div class="prediction-details">
-                <strong>Search:</strong> {{ group.search_criteria }} |
-                <strong>Predicted Price:</strong> ₹{{ "%.2f" |
-                format(group.predicted_price) if group.predicted_price else
-                'N/A' }}
-              </div>
-
-              <!-- Recommendations Table -->
-              <div class="recommendations-table-header">
-                <div>Laptop Details</div>
-                <div>Price</div>
-                <div>Match Score</div>
-                <div>Date Saved</div>
-                <div>Actions</div>
-              </div>
-
-              <!-- Recommendations List -->
-              {% for recommendation in group.recommendations %}
-              <div class="recommendation-item">
-                <!-- Laptop Info -->
-                <div class="laptop-info">
-                  <h5 class="laptop-name">{{ recommendation.laptop_name }}</h5>
-                  <div class="laptop-specs">{{ recommendation.specs }}</div>
-                </div>
-
-                <!-- Price Info -->
-                <div class="price-info">
-                  <div class="price-value">
-                    ₹{{ "%.2f" | format(recommendation.price) }}
+              {% for category in categories %}
+              <div class="category-item">
+                <!-- Category Title and Date -->
+                <div class="category-title-section">
+                  <h3 class="category-name">{{ category.cluster_name }}</h3>
+                  <div class="category-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ category.created_at.strftime('%b %d, %Y at %I:%M %p') }}
                   </div>
                 </div>
 
-                <!-- Similarity Info -->
-                <div class="similarity-info">
-                  <span class="similarity-badge">
-                    {{ "%.0f" | format(recommendation.similarity_score * 100)
-                    }}% Match
-                  </span>
+                <!-- Prediction Context -->
+                {% if category.prediction_details %}
+                <div
+                  class="prediction-context"
+                  style="
+                    background: #e8f4fd;
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    margin-bottom: 15px;
+                    border-left: 4px solid #4e73df;
+                  "
+                >
+                  <small
+                    ><strong>From Prediction:</strong> {{
+                    category.prediction_details }}</small
+                  >
+                  {% if category.predicted_price %}
+                  <br /><small
+                    ><strong>Predicted Price:</strong> ₹{{ "%.2f" |
+                    format(category.predicted_price) }}</small
+                  >
+                  {% endif %}
                 </div>
+                {% endif %}
 
-                <!-- Date Info -->
-                <div class="date-info">
-                  <div class="date-value">
-                    {{ recommendation.saved_at.strftime('%b %d, %Y') }}<br />
-                    <small class="text-muted"
-                      >{{ recommendation.saved_at.strftime('%I:%M %p') }}</small
-                    >
+                <!-- Category Description -->
+                {% if category.cluster_description %}
+                <p class="category-description">
+                  {{ category.cluster_description }}
+                </p>
+                {% endif %}
+
+                <!-- Example Laptops -->
+                {% if category.example_laptops %}
+                <div class="category-examples">
+                  <h4>
+                    <i class="fas fa-laptop"></i>
+                    Laptops in this Category
+                  </h4>
+                  <div class="example-laptops-grid">
+                    {% for example in category.example_laptops %}
+                    <div class="example-laptop-card">
+                      <div class="example-laptop-title">
+                        {{ example.Title or (example.Company + ' ' +
+                        example.TypeName) }}
+                      </div>
+                      <div class="example-laptop-specs">
+                        <div class="spec-item">
+                          <i class="fas fa-memory"></i>
+                          <span class="spec-value"
+                            >{{ example.Ram or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-hdd"></i>
+                          <span class="spec-value"
+                            >{{ example.Storage or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-microchip"></i>
+                          <span class="spec-value"
+                            >{{ example.Cpu_brand or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-microchip"></i>
+                          <span class="spec-value"
+                            >{{ example.Gpu_brand or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-weight"></i>
+                          <span class="spec-value"
+                            >{{ example.Weight or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-window-restore"></i>
+                          <span class="spec-value"
+                            >{{ example.os or 'N/A' }}</span
+                          >
+                        </div>
+                      </div>
+                      <div class="example-laptop-price">
+                        {{ example.Price if example.Price else 'N/A' }}
+                      </div>
+                      <!-- Individual Laptop Booking Button -->
+                      <div class="laptop-actions">
+                        <form
+                          action="{{ url_for('book_laptop', laptop_id=example.laptop_id, cid=category.cid) }}"
+                          method="POST"
+                          style="display: inline"
+                          onsubmit="return confirm('Are you sure you want to book this laptop?');"
+                        >
+                          <button type="submit" class="book-laptop-btn">
+                            <i class="fas fa-shopping-cart"></i>
+                            Book This Laptop
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                    {% endfor %}
                   </div>
                 </div>
+                {% endif %}
 
-                <!-- Actions -->
-                <div class="action-buttons">
+                <!-- Category Actions -->
+                <div class="category-actions">
                   <form
-                    action="{{ url_for('book_recommendation', rid=recommendation.rid) }}"
+                    action="{{ url_for('delete_category', cid=category.cid) }}"
                     method="POST"
                     style="display: inline"
-                    onsubmit="return confirm('Are you sure you want to book this laptop?');"
+                    onsubmit="return confirm('Are you sure you want to delete this category?');"
                   >
-                    <button type="submit" class="book-btn">
-                      <i class="fas fa-shopping-cart"></i> Book
-                    </button>
-                  </form>
-                  <form
-                    action="{{ url_for('delete_recommendation', rid=recommendation.rid) }}"
-                    method="POST"
-                    style="display: inline"
-                    onsubmit="return confirm('Are you sure you want to delete this recommendation?');"
-                  >
-                    <button type="submit" class="delete-btn">
-                      <i class="fas fa-trash"></i> Delete
+                    <button type="submit" class="delete-category-btn">
+                      <i class="fas fa-trash"></i>
+                      Delete Category
                     </button>
                   </form>
                 </div>
               </div>
               {% endfor %}
             </div>
-            {% endfor %} {% else %}
+
+            {% else %}
             <!-- Empty State -->
-            <div class="prediction-group">
+            <div class="categories-container">
               <div class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>No Saved Recommendations</h3>
-                <p>You haven't saved any laptop recommendations yet.</p>
+                <i class="fas fa-layer-group"></i>
+                <h3>No Categories Found</h3>
+                <p>You haven't saved any laptop categories yet.</p>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-                  <i class="fas fa-search"></i> Find Recommendations
+                  <i class="fas fa-search"></i> Find Categories
                 </a>
               </div>
             </div>

@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Categories - Admin Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/css/sb-admin-2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .flash-messages {
+        margin: 1rem 0;
+      }
+      .flash-messages ul {
+        list-style: none;
+        padding: 0;
+      }
+      .flash-messages li {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+      }
+      .flash-messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .flash-messages .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      /* Category Grouping Styles */
+      .categories-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e3e6f0;
+        margin-bottom: 30px;
+      }
+
+      .category-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .category-header i {
+        font-size: 1.3rem;
+      }
+
+      .category-item {
+        padding: 25px;
+        border-bottom: 1px solid #e3e6f0;
+        transition: all 0.3s ease;
+      }
+
+      .category-item:hover {
+        background-color: #f8f9fc;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .category-item:last-child {
+        border-bottom: none;
+      }
+
+      .category-title-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .category-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+      }
+
+      .category-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+      }
+
+      .category-description {
+        color: #6c757d;
+        font-size: 1rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+
+      .category-examples {
+        background: #f8f9fc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .category-examples h4 {
+        color: #4e73df;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .example-laptops-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+      }
+
+      .example-laptop-card {
+        background: white;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .example-laptop-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: #4e73df;
+      }
+
+      .example-laptop-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      .example-laptop-specs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        font-size: 0.85rem;
+      }
+
+      .spec-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+      }
+
+      .spec-item i {
+        width: 12px;
+        color: #4e73df;
+      }
+
+      .spec-value {
+        color: #495057;
+        font-weight: 500;
+      }
+
+      .example-laptop-price {
+        text-align: right;
+        margin-top: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #e74c3c;
+      }
+
+      .category-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .view-details-btn {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+      }
+
+      .view-details-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.4);
+        background: linear-gradient(45deg, #224abe, #1e3d8f);
+        color: white;
+        text-decoration: none;
+      }
+
+      .delete-category-btn {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+      }
+
+      .delete-category-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        background: linear-gradient(45deg, #c0392b, #a93226);
+        color: white;
+        text-decoration: none;
+      }
+
+      .cluster-badge {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 10px;
+      }
+
+      .user-badge {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 10px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6c757d;
+      }
+
+      .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+        color: #4e73df;
+      }
+
+      .empty-state h3 {
+        margin-bottom: 15px;
+        color: #495057;
+        font-size: 1.5rem;
+      }
+
+      .empty-state p {
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+        display: none;
+      }
+
+      .no-results i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.3;
+        color: #4e73df;
+      }
+
+      /* Stats Header */
+      .stats-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.2);
+      }
+
+      .stats-item {
+        text-align: center;
+      }
+
+      .stats-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+        display: block;
+      }
+
+      .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      /* Search Section */
+      .search-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e3e6f0;
+      }
+
+      .search-row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: end;
+      }
+
+      .search-group {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      .search-group label {
+        font-weight: 600;
+        color: #4e73df;
+        margin-bottom: 5px;
+        display: block;
+      }
+
+      .search-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-search {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .btn-reset {
+        background: linear-gradient(45deg, #6c757d, #5a6268);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .category-title-section {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .example-laptops-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .example-laptop-specs {
+          grid-template-columns: 1fr;
+        }
+
+        .category-actions {
+          justify-content: center;
+        }
+
+        .stats-header {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .stats-header > div {
+          display: flex;
+          gap: 30px;
+        }
+
+        .search-row {
+          flex-direction: column;
+        }
+
+        .search-group {
+          min-width: 100%;
+        }
+
+        .search-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+      }
+    </style>
+  </head>
+  <body id="page-top">
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="{{ url_for('index') }}"
+        >
+          <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="sidebar-brand-text mx-3">Laptop Predictor Admin</div>
+        </a>
+
+        <hr class="sidebar-divider my-0" />
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admindashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+
+        <div class="sidebar-heading">Administration</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('user_list') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_predictions') }}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>All Predictions</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_recommendations') }}">
+            <i class="fas fa-fw fa-table"></i>
+            <span>All Recommendations</span>
+          </a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('all_categories') }}">
+            <i class="fas fa-fw fa-layer-group"></i>
+            <span>All Categories</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('all_bookings') }}">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>All Bookings</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider d-none d-md-block" />
+
+        <div class="text-center d-none d-md-inline">
+          <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+      </ul>
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+          <!-- Topbar -->
+          <nav
+            class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"
+          >
+            <button
+              id="sidebarToggleTop"
+              class="btn btn-link d-md-none rounded-circle mr-3"
+            >
+              <i class="fa fa-bars"></i>
+            </button>
+
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item dropdown no-arrow">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small"
+                    >Admin</span
+                  >
+                  <img
+                    class="img-profile rounded-circle"
+                    src="https://source.unsplash.com/QAB-WJcbgJk/60x60"
+                  />
+                </a>
+                <div
+                  class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown"
+                >
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Settings
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">
+                    <i
+                      class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
+                    ></i>
+                    Logout
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="container-fluid">
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+              <ul>
+                {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %} {% endwith %}
+            </div>
+
+            <h1 class="h3 mb-4 text-gray-800">All Categories</h1>
+
+            <!-- Stats Header -->
+            <div class="stats-header">
+              <div class="stats-item">
+                <span class="stats-number">{{ total_categories }}</span>
+                <span class="stats-label">Total Categories</span>
+              </div>
+              <div class="stats-item">
+                <span class="stats-number">{{ unique_clusters }}</span>
+                <span class="stats-label">Unique Clusters</span>
+              </div>
+              <div class="stats-item">
+                <span class="stats-number">{{ total_examples }}</span>
+                <span class="stats-label">Total Laptops</span>
+              </div>
+              <div class="stats-item">
+                <span class="stats-number">{{ active_users }}</span>
+                <span class="stats-label">Active Users</span>
+              </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+              <div class="search-row">
+                <div class="search-group">
+                  <label for="searchInput"
+                    ><i class="fas fa-search"></i> Search Categories</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="searchInput"
+                    placeholder="Search by category name, user, or description..."
+                  />
+                </div>
+
+                <div class="search-actions">
+                  <button class="btn btn-search" id="applySearch">
+                    <i class="fas fa-search"></i> Search
+                  </button>
+                  <button class="btn btn-reset" id="resetSearch">
+                    <i class="fas fa-redo"></i> Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card View -->
+            {% if categories %}
+            <div class="categories-container">
+              <div class="category-header">
+                <div>
+                  <i class="fas fa-layer-group"></i>
+                  All Categories (<span id="visibleCount"
+                    >{{ total_categories }}</span
+                  >
+                  of {{ total_categories }} total)
+                </div>
+              </div>
+
+              <!-- No Results Message -->
+              <div class="no-results" id="noResults">
+                <i class="fas fa-search"></i>
+                <h3>No Categories Found</h3>
+                <p>
+                  No categories match your search criteria. Try different
+                  keywords.
+                </p>
+              </div>
+
+              {% for category in categories %}
+              <div
+                class="category-item searchable-item"
+                data-name="{{ category.cluster_name|lower }}"
+                data-user="{{ category.username|lower }}"
+                data-description="{{ (category.cluster_description or '')|lower }}"
+                data-cluster="{{ category.cluster_number }}"
+              >
+                <!-- Category Title and Date -->
+                <div class="category-title-section">
+                  <div>
+                    <h3 class="category-name">{{ category.cluster_name }}</h3>
+                    <div>
+                      <span class="user-badge">{{ category.username }}</span>
+                      <span class="cluster-badge"
+                        >Cluster {{ category.cluster_number }}</span
+                      >
+                    </div>
+                  </div>
+                  <div class="category-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ category.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                  </div>
+                </div>
+
+                <!-- Prediction Context -->
+                {% if category.predicted_price %}
+                <div
+                  class="prediction-context"
+                  style="
+                    background: #e8f4fd;
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    margin-bottom: 15px;
+                    border-left: 4px solid #4e73df;
+                  "
+                >
+                  <small
+                    ><strong>Predicted Price:</strong> ₹{{ "%.2f" |
+                    format(category.predicted_price) }}</small
+                  >
+                </div>
+                {% endif %}
+
+                <!-- Category Description -->
+                {% if category.cluster_description %}
+                <p class="category-description">
+                  {{ category.cluster_description }}
+                </p>
+                {% endif %}
+
+                <!-- Example Laptops -->
+                {% if category.example_laptops %}
+                <div class="category-examples">
+                  <h4>
+                    <i class="fas fa-laptop"></i>
+                    Laptops in this Category ({{ category.example_laptops|length
+                    }})
+                  </h4>
+                  <div class="example-laptops-grid">
+                    {% for example in category.example_laptops %}
+                    <div class="example-laptop-card">
+                      <div class="example-laptop-title">
+                        {{ example.Title or (example.Company + ' ' +
+                        example.TypeName) }}
+                      </div>
+                      <div class="example-laptop-specs">
+                        <div class="spec-item">
+                          <i class="fas fa-memory"></i>
+                          <span class="spec-value"
+                            >{{ example.Ram or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-hdd"></i>
+                          <span class="spec-value"
+                            >{{ example.Storage or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-microchip"></i>
+                          <span class="spec-value"
+                            >{{ example.Cpu_brand or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-microchip"></i>
+                          <span class="spec-value"
+                            >{{ example.Gpu_brand or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-weight"></i>
+                          <span class="spec-value"
+                            >{{ example.Weight or 'N/A' }}</span
+                          >
+                        </div>
+                        <div class="spec-item">
+                          <i class="fas fa-window-restore"></i>
+                          <span class="spec-value"
+                            >{{ example.os or 'N/A' }}</span
+                          >
+                        </div>
+                      </div>
+                      <div class="example-laptop-price">
+                        {{ example.Price if example.Price else 'N/A' }}
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Category Actions -->
+                <div class="category-actions">
+                  <button
+                    type="button"
+                    class="view-details-btn"
+                    data-toggle="modal"
+                    data-target="#categoryModal{{ category.cid }}"
+                  >
+                    <i class="fas fa-eye"></i>
+                    View Details
+                  </button>
+                  <a
+                    href="{{ url_for('delete_category_admin', cid=category.cid) }}"
+                    class="delete-category-btn"
+                    onclick="return confirm('Are you sure you want to delete this category? This action cannot be undone.')"
+                  >
+                    <i class="fas fa-trash"></i>
+                    Delete Category
+                  </a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="categories-container">
+              <div class="empty-state">
+                <i class="fas fa-layer-group"></i>
+                <h3>No Categories Found</h3>
+                <p>There are no categories in the system yet.</p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modals for category details -->
+    {% for category in categories %}
+    <div
+      class="modal fade"
+      id="categoryModal{{ category.cid }}"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="categoryModalLabel{{ category.cid }}"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="categoryModalLabel{{ category.cid }}">
+              <i class="fas fa-layer-group"></i>
+              {{ category.cluster_name }}
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="category-details">
+              <h6>Category Information</h6>
+              <p><strong>User:</strong> {{ category.username }}</p>
+              <p>
+                <strong>Cluster Number:</strong> {{ category.cluster_number }}
+              </p>
+              <p>
+                <strong>Description:</strong> {{ category.cluster_description or
+                'No description provided' }}
+              </p>
+              <p>
+                <strong>Created:</strong> {{ category.created_at.strftime('%b
+                %d, %Y at %I:%M %p') }}
+              </p>
+              {% if category.predicted_price %}
+              <p>
+                <strong>Predicted Price:</strong> ₹{{
+                "%.2f"|format(category.predicted_price) }}
+              </p>
+              {% endif %}
+            </div>
+
+            {% if category.example_laptops and category.example_laptops|length >
+            0 %}
+            <div class="mt-4">
+              <h6>Example Laptops ({{ category.example_laptops|length }})</h6>
+              <div class="row">
+                {% for example in category.example_laptops %}
+                <div class="col-md-6 mb-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <h6 class="card-title">
+                        {{ example.Title or (example.Company + ' ' +
+                        example.TypeName) }}
+                      </h6>
+                      <div class="card-text">
+                        <small class="text-muted">
+                          <p>
+                            <i class="fas fa-memory"></i> RAM: {{ example.Ram or
+                            'N/A' }}
+                          </p>
+                          <p>
+                            <i class="fas fa-hdd"></i>
+                            Storage: {{ example.Storage or 'N/A' }}
+                          </p>
+                          <p>
+                            <i class="fas fa-microchip"></i>
+                            CPU: {{ example.Cpu_brand or 'N/A' }}
+                          </p>
+                          <p>
+                            <i class="fas fa-microchip"></i>
+                            GPU: {{ example.Gpu_brand or 'N/A' }}
+                          </p>
+                          <p>
+                            <i class="fas fa-weight"></i>
+                            Weight: {{ example.Weight or 'N/A' }}
+                          </p>
+                          <p>
+                            <i class="fas fa-rupee-sign"></i>
+                            Price: {{ example.Price or 'N/A' }}
+                          </p>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+              <i class="fas fa-info-circle"></i>
+              No example laptops available for this category.
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/startbootstrap-sb-admin-2@4.1.4/js/sb-admin-2.min.js"></script>
+
+    <script>
+      $(document).ready(function () {
+        // Search Functionality
+        function performSearch() {
+          const searchTerm = $("#searchInput").val().toLowerCase().trim();
+          let visibleCount = 0;
+
+          if (searchTerm === "") {
+            $(".searchable-item").show();
+            visibleCount = $(".searchable-item").length;
+          } else {
+            $(".searchable-item").each(function () {
+              const categoryName = $(this).data("name");
+              const categoryDesc = $(this).data("description");
+              const categoryUser = $(this).data("user");
+
+              const matchesSearch =
+                categoryName.includes(searchTerm) ||
+                categoryDesc.includes(searchTerm) ||
+                categoryUser.includes(searchTerm);
+
+              if (matchesSearch) {
+                $(this).show();
+                visibleCount++;
+              } else {
+                $(this).hide();
+              }
+            });
+          }
+
+          // Update visible count
+          $("#visibleCount").text(visibleCount);
+
+          // Show/hide no results message
+          if (visibleCount === 0 && searchTerm !== "") {
+            $("#noResults").show();
+          } else {
+            $("#noResults").hide();
+          }
+        }
+
+        // Search on button click
+        $("#applySearch").click(function () {
+          performSearch();
+        });
+
+        // Reset Search
+        $("#resetSearch").click(function () {
+          $("#searchInput").val("");
+          performSearch();
+        });
+
+        // Search on Enter key
+        $("#searchInput").keyup(function (event) {
+          if (event.keyCode === 13) {
+            performSearch();
+          } else {
+            // Real-time search as user types
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(performSearch, 300);
+          }
+        });
+
+        // Initialize search on page load
+        performSearch();
+      });
+    </script>
+  </body>
+</html>

@@ -236,15 +236,6 @@
               <p><i class="fas fa-touchpad"></i> Touchscreen: {{ rec.Touchscreen | default('N/A') }}</p>
               <p><i class="fas fa-desktop"></i> IPS: {{ rec.Ips | default('N/A') }}</p>
               <p><i class="fas fa-window-restore"></i> OS: {{ rec.os | default('N/A') }}</p>
-              <button class="save-recommendation-btn" 
-                      data-laptop-name="{{ rec.Title | default(rec.Company ~ ' ' ~ rec.TypeName) }}"
-                      data-specs="RAM: {{ rec.Ram | default('N/A') }}, Storage: {{ rec.Storage | default('N/A') }}, CPU: {{ rec.Cpu_brand | default('N/A') }}"
-                      data-price="{{ rec.Price | default('N/A') }}"
-                      data-similarity="{{ rec.Similarity | default('0') }}"
-                      onclick="saveRecommendation(this)"
-                      aria-label="Save recommendation for {{ rec.Title | default(rec.Company ~ ' ' ~ rec.TypeName) }}">
-                Save Recommendation
-              </button>
             </div>
             {% else %}
             <p>No recommended laptops found.</p>
